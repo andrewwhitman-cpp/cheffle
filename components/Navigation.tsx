@@ -24,6 +24,7 @@ export default function Navigation() {
     { href: '/meal-plan', label: 'Meal Plan' },
     { href: '/ingredient-list', label: 'Shopping List' },
     { href: '/tags', label: 'Tags' },
+    { href: '/insights', label: 'Insights' },
   ];
 
   return (
