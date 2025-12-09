@@ -54,27 +54,27 @@ export default function Calendar({ mealPlans, onDateClick, onMealClick }: Calend
     setCurrentDate(new Date());
   };
 
-  const mealTypeConfig: Record<string, { icon: string; bg: string; text: string; hover: string; border: string }> = {
+  const mealTypeConfig: Record<string, { label: string; bg: string; text: string; hover: string; border: string }> = {
     breakfast: {
-      icon: '🍳',
-      bg: 'bg-yellow-50',
-      text: 'text-yellow-800',
-      hover: 'hover:bg-yellow-100',
-      border: 'border-yellow-200',
+      label: 'B',
+      bg: 'bg-cream-100',
+      text: 'text-cream-800',
+      hover: 'hover:bg-cream-200',
+      border: 'border-cream-300',
     },
     lunch: {
-      bg: 'bg-green-50',
-      text: 'text-green-800',
-      hover: 'hover:bg-green-100',
-      border: 'border-green-200',
-      icon: '🥗',
+      bg: 'bg-sage-100',
+      text: 'text-sage-800',
+      hover: 'hover:bg-sage-200',
+      border: 'border-sage-300',
+      label: 'L',
     },
     dinner: {
-      bg: 'bg-orange-50',
-      text: 'text-orange-800',
-      hover: 'hover:bg-orange-100',
-      border: 'border-orange-200',
-      icon: '🍽️',
+      bg: 'bg-terracotta-100',
+      text: 'text-terracotta-800',
+      hover: 'hover:bg-terracotta-200',
+      border: 'border-terracotta-300',
+      label: 'D',
     },
   };
 
@@ -86,7 +86,7 @@ export default function Calendar({ mealPlans, onDateClick, onMealClick }: Calend
     // Empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(
-        <div key={`empty-${i}`} className="h-32 border border-gray-200 bg-gray-50"></div>
+        <div key={`empty-${i}`} className="h-32 border border-sage-200 bg-cream-50"></div>
       );
     }
 
@@ -99,11 +99,11 @@ export default function Calendar({ mealPlans, onDateClick, onMealClick }: Calend
       days.push(
         <div
           key={day}
-          className={`h-32 border border-gray-200 p-1 ${
-            isToday ? 'bg-blue-50 border-blue-300' : 'bg-white'
+          className={`h-32 border border-sage-200 p-1 ${
+            isToday ? 'bg-terracotta-50 border-terracotta-300' : 'bg-white'
           }`}
         >
-          <div className={`text-xs font-semibold mb-0.5 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
+          <div className={`text-xs font-semibold mb-0.5 ${isToday ? 'text-terracotta-700' : 'text-sage-800'}`}>
             {day}
           </div>
           <div className="space-y-0.5">
@@ -123,17 +123,16 @@ export default function Calendar({ mealPlans, onDateClick, onMealClick }: Calend
                     }
                   }}
                   className={`text-[10px] px-1 py-0.5 rounded border ${config.bg} ${config.border} ${config.text} ${config.hover} cursor-pointer min-h-[20px] flex items-center ${
-                    meal ? 'font-medium' : 'opacity-60'
+                    meal ? 'font-medium' : 'opacity-50'
                   }`}
                   title={meal ? `${mealType}: ${meal.recipe.name}` : `Click to add ${mealType}`}
                 >
                   {meal ? (
-                    <span className="truncate block w-full">
-                      <span className="mr-0.5">{config.icon}</span>
+                    <span className="truncate block w-full text-[10px]">
                       <span className="truncate">{meal.recipe.name}</span>
                     </span>
                   ) : (
-                    <span className="text-gray-400 text-[9px]">{config.icon}</span>
+                    <span className="text-sage-400 text-[9px] font-medium">{config.label}</span>
                   )}
                 </div>
               );
@@ -147,54 +146,54 @@ export default function Calendar({ mealPlans, onDateClick, onMealClick }: Calend
   };
 
   return (
-    <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-900">
+    <div className="bg-white rounded-lg shadow-sm border border-sage-200 p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-sage-900 tracking-tight">
           {monthNames[month]} {year}
         </h2>
         <div className="flex gap-2">
           <button
             onClick={previousMonth}
-            className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition"
+            className="px-3 py-1.5 text-sm border border-sage-300 rounded-md hover:bg-sage-50 transition-colors text-sage-700"
           >
             ←
           </button>
           <button
             onClick={goToToday}
-            className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 transition"
+            className="px-3 py-1.5 text-xs border border-sage-300 rounded-md hover:bg-sage-50 transition-colors text-sage-700"
           >
             Today
           </button>
           <button
             onClick={nextMonth}
-            className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 transition"
+            className="px-3 py-1.5 text-sm border border-sage-300 rounded-md hover:bg-sage-50 transition-colors text-sage-700"
           >
             →
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden">
+      <div className="grid grid-cols-7 gap-0 border border-sage-200 rounded-lg overflow-hidden">
         {dayNames.map((day) => (
-          <div key={day} className="text-center font-semibold text-gray-700 py-2 border-b border-r border-gray-200 bg-gray-50 text-xs">
+          <div key={day} className="text-center font-medium text-sage-700 py-2 border-b border-r border-sage-200 bg-cream-50 text-xs">
             {day}
           </div>
         ))}
         {renderCalendarDays()}
       </div>
 
-      <div className="mt-3 flex gap-3 text-xs text-gray-600 justify-center">
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-yellow-50 border border-yellow-200"></div>
-          <span>Breakfast</span>
+      <div className="mt-4 flex gap-4 text-xs text-sage-600 justify-center">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-cream-200 border border-cream-300"></div>
+          <span className="font-medium">Breakfast</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-green-50 border border-green-200"></div>
-          <span>Lunch</span>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-sage-200 border border-sage-300"></div>
+          <span className="font-medium">Lunch</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-orange-50 border border-orange-200"></div>
-          <span>Dinner</span>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-terracotta-200 border border-terracotta-300"></div>
+          <span className="font-medium">Dinner</span>
         </div>
       </div>
     </div>

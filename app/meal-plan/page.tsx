@@ -272,14 +272,14 @@ export default function MealPlanPage() {
     <ProtectedRoute>
       <div className="px-4 sm:px-6 lg:px-8 py-4">
         <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Meal Plan</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-semibold text-sage-900 tracking-tight">Meal Plan</h1>
+          <p className="text-sm text-sage-600 mt-1">
             Click a meal slot to add or edit a meal
           </p>
         </div>
         {loading ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <div className="text-gray-500">Loading calendar...</div>
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-sage-200">
+            <div className="text-sage-500">Loading calendar...</div>
           </div>
         ) : (
           <Calendar
@@ -292,14 +292,14 @@ export default function MealPlanPage() {
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="bg-white rounded-lg shadow-lg border border-sage-200 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-semibold text-sage-900 mb-4 tracking-tight">
                 {selectedMealPlan ? 'Edit Meal Plan' : 'Add Meal to Plan'}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
                       Date
                     </label>
                     <input
@@ -307,17 +307,17 @@ export default function MealPlanPage() {
                       required
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
                       Meal Type
                     </label>
                     <select
                       value={formData.meal_type}
                       onChange={(e) => setFormData({ ...formData, meal_type: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
                     >
                       <option value="breakfast">Breakfast</option>
                       <option value="lunch">Lunch</option>
@@ -328,7 +328,7 @@ export default function MealPlanPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-sage-700 mb-2">
                     Recipe
                   </label>
                   
@@ -339,7 +339,7 @@ export default function MealPlanPage() {
                       placeholder="Search recipes..."
                       value={recipeSearchQuery}
                       onChange={(e) => setRecipeSearchQuery(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
                     />
                   </div>
 
@@ -347,23 +347,23 @@ export default function MealPlanPage() {
                   {tags.length > 0 && (
                     <div className="mb-3">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Filter by Tags:</span>
+                        <span className="text-xs font-semibold text-sage-700 uppercase tracking-wide">Filter by Tags:</span>
                         {selectedTagIds.length > 0 && (
                           <button
                             type="button"
                             onClick={() => setSelectedTagIds([])}
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                            className="text-xs text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
                           >
                             Clear all
                           </button>
                         )}
                       </div>
-                      <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                      <div className="space-y-2 max-h-32 overflow-y-auto border border-sage-200 rounded-lg p-2">
                         {Object.entries(categorizeTags()).map(([category, categoryTags]) => {
                           if (categoryTags.length === 0) return null;
                           return (
                             <div key={category} className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-gray-500 min-w-[100px]">
+                              <span className="text-xs font-medium text-sage-500 min-w-[100px]">
                                 {category}:
                               </span>
                               <div className="flex flex-wrap gap-1.5">
@@ -374,8 +374,8 @@ export default function MealPlanPage() {
                                     onClick={() => handleTagToggle(tag.id)}
                                     className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${
                                       selectedTagIds.includes(tag.id)
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        ? 'bg-terracotta-600 text-white'
+                                        : 'bg-cream-100 text-sage-700 hover:bg-cream-200'
                                     }`}
                                   >
                                     {tag.name}
@@ -390,25 +390,25 @@ export default function MealPlanPage() {
                   )}
 
                   {/* Recipe List */}
-                  <div className="border border-gray-300 rounded-lg max-h-64 overflow-y-auto">
+                  <div className="border border-sage-300 rounded-lg max-h-64 overflow-y-auto">
                     {recipes.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500 text-sm">
+                      <div className="p-4 text-center text-sage-500 text-sm">
                         {allRecipes.length === 0 ? 'No recipes yet' : 'No recipes match your search'}
                       </div>
                     ) : (
-                      <div className="divide-y divide-gray-200">
+                      <div className="divide-y divide-sage-200">
                         {recipes.map((recipe) => (
                           <button
                             key={recipe.id}
                             type="button"
                             onClick={() => setFormData({ ...formData, recipe_id: recipe.id.toString() })}
-                            className={`w-full text-left p-3 hover:bg-gray-50 transition ${
-                              formData.recipe_id === recipe.id.toString() ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                            className={`w-full text-left p-3 hover:bg-cream-50 transition ${
+                              formData.recipe_id === recipe.id.toString() ? 'bg-terracotta-50 border-l-4 border-terracotta-500' : ''
                             }`}
                           >
-                            <div className="font-medium text-gray-900">{recipe.name}</div>
+                            <div className="font-medium text-sage-900">{recipe.name}</div>
                             {recipe.description && (
-                              <div className="text-sm text-gray-500 mt-1 line-clamp-1">
+                              <div className="text-sm text-sage-600 mt-1 line-clamp-1">
                                 {recipe.description}
                               </div>
                             )}
@@ -417,13 +417,13 @@ export default function MealPlanPage() {
                                 {recipe.tags.slice(0, 3).map((tag) => (
                                   <span
                                     key={tag.id}
-                                    className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600"
+                                    className="px-2 py-0.5 text-xs rounded-full bg-cream-100 text-sage-700"
                                   >
                                     {tag.name}
                                   </span>
                                 ))}
                                 {recipe.tags.length > 3 && (
-                                  <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                                  <span className="px-2 py-0.5 text-xs rounded-full bg-cream-100 text-sage-700">
                                     +{recipe.tags.length - 3}
                                   </span>
                                 )}
@@ -435,17 +435,17 @@ export default function MealPlanPage() {
                     )}
                   </div>
                   {formData.recipe_id && (
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-sage-600">
                       Selected: {recipes.find((r) => r.id.toString() === formData.recipe_id)?.name}
                     </p>
                   )}
                 </div>
 
-                <div className="flex gap-4 pt-4 border-t">
+                <div className="flex gap-4 pt-4 border-t border-sage-200">
                   <button
                     type="submit"
                     disabled={!formData.recipe_id}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-terracotta-600 text-white px-4 py-2 rounded-lg hover:bg-terracotta-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >
                     {selectedMealPlan ? 'Update' : 'Add'}
                   </button>
@@ -453,7 +453,7 @@ export default function MealPlanPage() {
                     <button
                       type="button"
                       onClick={handleDelete}
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                      className="bg-coral-600 text-white px-4 py-2 rounded-lg hover:bg-coral-700 transition-colors font-medium"
                     >
                       Delete
                     </button>
@@ -466,7 +466,7 @@ export default function MealPlanPage() {
                       setRecipeSearchQuery('');
                       setSelectedTagIds([]);
                     }}
-                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
+                    className="bg-sage-200 text-sage-700 px-4 py-2 rounded-lg hover:bg-sage-300 transition-colors font-medium"
                   >
                     Cancel
                   </button>

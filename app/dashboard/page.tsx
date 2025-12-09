@@ -70,29 +70,20 @@ export default function DashboardPage() {
     }
   };
 
-  const getMealTypeIcon = (mealType: string) => {
-    switch (mealType) {
-      case 'breakfast':
-        return '🍳';
-      case 'lunch':
-        return '🥗';
-      case 'dinner':
-        return '🍽️';
-      default:
-        return '🍴';
-    }
+  const getMealTypeLabel = (mealType: string) => {
+    return mealType.charAt(0).toUpperCase() + mealType.slice(1);
   };
 
   const getMealTypeColor = (mealType: string) => {
     switch (mealType) {
       case 'breakfast':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        return 'bg-cream-100 text-cream-800 border-cream-300';
       case 'lunch':
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-sage-100 text-sage-800 border-sage-300';
       case 'dinner':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
+        return 'bg-terracotta-100 text-terracotta-800 border-terracotta-300';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-cream-50 text-sage-700 border-sage-200';
     }
   };
 
@@ -132,61 +123,58 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-lg text-gray-600">Welcome back! Here's what's happening.</p>
+          <h1 className="text-3xl font-semibold text-sage-900 mb-2 tracking-tight">Dashboard</h1>
+          <p className="text-base text-sage-600">Welcome back! Here's what's happening.</p>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="text-gray-500">Loading...</div>
+            <div className="text-sage-500">Loading...</div>
           </div>
         ) : (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-gradient-to-br from-terracotta-500 to-terracotta-600 rounded-lg shadow-sm border border-terracotta-400 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-blue-100 text-sm font-medium mb-1">Total Recipes</p>
-                    <p className="text-4xl font-bold">{totalRecipes}</p>
+                    <p className="text-terracotta-100 text-sm font-medium mb-1">Total Recipes</p>
+                    <p className="text-4xl font-semibold">{totalRecipes}</p>
                   </div>
-                  <div className="text-5xl opacity-20">📝</div>
                 </div>
                 <Link
                   href="/recipes"
-                  className="mt-4 inline-block text-sm text-blue-100 hover:text-white font-medium"
+                  className="mt-4 inline-block text-sm text-terracotta-100 hover:text-white font-medium transition-colors"
                 >
                   View all recipes →
                 </Link>
               </div>
 
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-gradient-to-br from-sage-500 to-sage-600 rounded-lg shadow-sm border border-sage-400 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-green-100 text-sm font-medium mb-1">Meals This Week</p>
-                    <p className="text-4xl font-bold">{mealsThisWeek}</p>
+                    <p className="text-sage-100 text-sm font-medium mb-1">Meals This Week</p>
+                    <p className="text-4xl font-semibold">{mealsThisWeek}</p>
                   </div>
-                  <div className="text-5xl opacity-20">📅</div>
                 </div>
                 <Link
                   href="/meal-plan"
-                  className="mt-4 inline-block text-sm text-green-100 hover:text-white font-medium"
+                  className="mt-4 inline-block text-sm text-sage-100 hover:text-white font-medium transition-colors"
                 >
                   View calendar →
                 </Link>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-gradient-to-br from-cream-500 to-cream-600 rounded-lg shadow-sm border border-cream-400 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm font-medium mb-1">Today's Meals</p>
-                    <p className="text-4xl font-bold">{mealsToday}</p>
+                    <p className="text-cream-100 text-sm font-medium mb-1">Today's Meals</p>
+                    <p className="text-4xl font-semibold">{mealsToday}</p>
                   </div>
-                  <div className="text-5xl opacity-20">🍴</div>
                 </div>
                 <Link
                   href="/meal-plan"
-                  className="mt-4 inline-block text-sm text-purple-100 hover:text-white font-medium"
+                  className="mt-4 inline-block text-sm text-cream-100 hover:text-white font-medium transition-colors"
                 >
                   Plan meals →
                 </Link>
@@ -195,14 +183,14 @@ export default function DashboardPage() {
 
             {/* Today's Meals Section */}
             {mealsToday > 0 && (
-              <div className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200">
+              <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-sage-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <span>🍽️</span> Today's Meals
+                  <h2 className="text-xl font-semibold text-sage-900 tracking-tight">
+                    Today's Meals
                   </h2>
                   <Link
                     href="/meal-plan"
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
                   >
                     View calendar →
                   </Link>
@@ -218,8 +206,7 @@ export default function DashboardPage() {
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xl">{getMealTypeIcon(mealType)}</span>
-                          <span className="font-semibold capitalize">{mealType}</span>
+                          <span className="text-xs font-semibold uppercase tracking-wide">{getMealTypeLabel(mealType)}</span>
                         </div>
                         {meal ? (
                           <Link
@@ -245,25 +232,24 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               {/* Recent Recipes */}
-              <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-sage-200">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <span>📝</span> Recent Recipes
+                  <h2 className="text-xl font-semibold text-sage-900 tracking-tight">
+                    Recent Recipes
                   </h2>
                   <Link
                     href="/recipes"
-                    className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                    className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
                   >
                     View all →
                   </Link>
                 </div>
                 {recentRecipes.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="text-6xl mb-4">👨‍🍳</div>
-                    <p className="text-gray-500 mb-4">No recipes yet.</p>
+                    <p className="text-sage-500 mb-4">No recipes yet.</p>
                     <Link
                       href="/recipes/new"
-                      className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                      className="inline-block bg-terracotta-600 text-white px-6 py-3 rounded-lg hover:bg-terracotta-700 transition-colors font-medium"
                     >
                       Create your first recipe
                     </Link>
@@ -274,26 +260,26 @@ export default function DashboardPage() {
                       <Link
                         key={recipe.id}
                         href={`/recipes/${recipe.id}`}
-                        className="block p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition group"
+                        className="block p-4 rounded-lg border border-sage-200 hover:border-terracotta-300 hover:shadow-sm transition group"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition mb-1">
+                            <div className="font-medium text-sage-900 group-hover:text-terracotta-600 transition mb-1">
                               {recipe.name}
                             </div>
                             {recipe.description && (
-                              <div className="text-sm text-gray-500 line-clamp-1 mb-2">
+                              <div className="text-sm text-sage-600 line-clamp-1 mb-2">
                                 {recipe.description}
                               </div>
                             )}
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span>⏱️ {recipe.prep_time + recipe.cook_time} min</span>
+                            <div className="flex items-center gap-4 text-xs text-sage-500">
+                              <span>{recipe.prep_time + recipe.cook_time} min</span>
                               {recipe.tags && recipe.tags.length > 0 && (
                                 <div className="flex gap-1">
                                   {recipe.tags.slice(0, 3).map((tag) => (
                                     <span
                                       key={tag.id}
-                                      className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600"
+                                      className="px-2 py-0.5 rounded-full bg-cream-100 text-sage-700"
                                     >
                                       {tag.name}
                                     </span>
@@ -310,25 +296,24 @@ export default function DashboardPage() {
               </div>
 
               {/* Upcoming Meals */}
-              <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-sage-200">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <span>📅</span> Upcoming Meals
+                  <h2 className="text-xl font-semibold text-sage-900 tracking-tight">
+                    Upcoming Meals
                   </h2>
                   <Link
                     href="/meal-plan"
-                    className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                    className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
                   >
                     View calendar →
                   </Link>
                 </div>
                 {upcomingMeals.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="text-6xl mb-4">🍽️</div>
-                    <p className="text-gray-500 mb-4">No meals planned yet.</p>
+                    <p className="text-sage-500 mb-4">No meals planned yet.</p>
                     <Link
                       href="/meal-plan"
-                      className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-medium"
+                      className="inline-block bg-sage-600 text-white px-6 py-3 rounded-lg hover:bg-sage-700 transition-colors font-medium"
                     >
                       Plan your meals
                     </Link>
@@ -338,8 +323,8 @@ export default function DashboardPage() {
                     {Object.entries(groupMealsByDate(upcomingMeals))
                       .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
                       .map(([date, meals]) => (
-                        <div key={date} className="border-l-4 border-blue-500 pl-4">
-                          <div className="font-semibold text-gray-900 mb-2">
+                        <div key={date} className="border-l-4 border-terracotta-400 pl-4">
+                          <div className="font-semibold text-sage-900 mb-2">
                             {formatDate(date)}
                           </div>
                           <div className="space-y-2">
@@ -347,15 +332,14 @@ export default function DashboardPage() {
                               <Link
                                 key={meal.id}
                                 href="/meal-plan"
-                                className="block p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition group"
+                                className="block p-3 rounded-lg border border-sage-200 hover:border-terracotta-300 hover:shadow-sm transition group"
                               >
                                 <div className="flex items-center gap-3">
-                                  <span className="text-lg">{getMealTypeIcon(meal.meal_type)}</span>
                                   <div className="flex-1">
-                                    <div className="font-medium text-gray-900 group-hover:text-blue-600 transition">
+                                    <div className="font-medium text-sage-900 group-hover:text-terracotta-600 transition">
                                       {meal.recipe.name}
                                     </div>
-                                    <div className="text-xs text-gray-500 capitalize mt-0.5">
+                                    <div className="text-xs text-sage-500 capitalize mt-0.5">
                                       {meal.meal_type}
                                     </div>
                                   </div>
@@ -374,27 +358,24 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Link
                 href="/recipes/new"
-                className="group bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-8 hover:shadow-xl transition transform hover:-translate-y-1"
+                className="group bg-gradient-to-br from-terracotta-500 to-terracotta-600 text-white rounded-lg shadow-sm border border-terracotta-400 p-8 hover:shadow-md transition"
               >
-                <div className="text-5xl mb-4">➕</div>
-                <div className="text-2xl font-bold mb-2">New Recipe</div>
-                <div className="text-blue-100">Create a new recipe to add to your collection</div>
+                <div className="text-xl font-semibold mb-2">New Recipe</div>
+                <div className="text-terracotta-100 text-sm">Create a new recipe to add to your collection</div>
               </Link>
               <Link
                 href="/meal-plan"
-                className="group bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-8 hover:shadow-xl transition transform hover:-translate-y-1"
+                className="group bg-gradient-to-br from-sage-500 to-sage-600 text-white rounded-lg shadow-sm border border-sage-400 p-8 hover:shadow-md transition"
               >
-                <div className="text-5xl mb-4">📅</div>
-                <div className="text-2xl font-bold mb-2">Plan Meals</div>
-                <div className="text-green-100">Schedule your meals for the week ahead</div>
+                <div className="text-xl font-semibold mb-2">Plan Meals</div>
+                <div className="text-sage-100 text-sm">Schedule your meals for the week ahead</div>
               </Link>
               <Link
                 href="/ingredient-list"
-                className="group bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-8 hover:shadow-xl transition transform hover:-translate-y-1"
+                className="group bg-gradient-to-br from-cream-500 to-cream-600 text-white rounded-lg shadow-sm border border-cream-400 p-8 hover:shadow-md transition"
               >
-                <div className="text-5xl mb-4">🛒</div>
-                <div className="text-2xl font-bold mb-2">Shopping List</div>
-                <div className="text-purple-100">Generate your grocery list from meal plans</div>
+                <div className="text-xl font-semibold mb-2">Shopping List</div>
+                <div className="text-cream-100 text-sm">Generate your grocery list from meal plans</div>
               </Link>
             </div>
           </>

@@ -18,14 +18,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>
-          <Navigation />
-          <main className="min-h-screen bg-gray-50">
-            {children}
-          </main>
-        </AuthProvider>
-      </body>
+                  <body className={inter.className}>
+                    <AuthProvider>
+                      <Navigation />
+                      <main className="min-h-screen bg-cream-50">
+                        {children}
+                      </main>
+                    </AuthProvider>
+                  </body>
     </html>
   );
 }

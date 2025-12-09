@@ -27,22 +27,22 @@ export default function Navigation() {
   ];
 
   return (
-    <nav className="bg-white shadow-sm border-b">
+    <nav className="bg-white border-b border-sage-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <Link href="/dashboard" className="flex items-center">
-              <span className="text-2xl font-bold text-blue-600">Cheffle</span>
+              <span className="text-xl font-semibold tracking-tight text-terracotta-600">Cheffle</span>
             </Link>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden sm:ml-8 sm:flex sm:space-x-6">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname === link.href
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-terracotta-500 text-sage-900'
+                      : 'border-transparent text-sage-600 hover:text-sage-900 hover:border-sage-300'
                   }`}
                 >
                   {link.label}
@@ -50,11 +50,11 @@ export default function Navigation() {
               ))}
             </div>
           </div>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-700 mr-4">{user.username}</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-sage-700">{user.username}</span>
             <button
               onClick={handleLogout}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-sage-600 hover:text-sage-900 transition-colors"
             >
               Logout
             </button>
