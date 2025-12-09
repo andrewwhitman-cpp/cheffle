@@ -121,19 +121,19 @@ export default function RecipesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Recipes</h1>
-            <p className="mt-2 text-gray-600">Manage your recipe collection</p>
+            <h1 className="text-3xl font-semibold text-sage-900 tracking-tight">Recipes</h1>
+            <p className="mt-2 text-sage-600">Manage your recipe collection</p>
           </div>
           <Link
             href="/recipes/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-terracotta-600 text-white px-4 py-2 rounded-lg hover:bg-terracotta-700 transition-colors font-medium"
           >
             + New Recipe
           </Link>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-sage-200 p-6 mb-8">
           <form onSubmit={handleSearch} className="mb-4">
             <div className="flex gap-4">
               <input
@@ -141,11 +141,11 @@ export default function RecipesPage() {
                 placeholder="Search recipes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-2 bg-white border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900 placeholder:text-sage-400"
               />
               <button
                 type="submit"
-                className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition"
+                className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 transition-colors font-medium"
               >
                 Search
               </button>
@@ -156,11 +156,11 @@ export default function RecipesPage() {
           {tags.length > 0 && (
             <div>
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Filter by Tags:</h3>
+                <h3 className="text-xs font-semibold text-sage-700 uppercase tracking-wide">Filter by Tags:</h3>
                 {selectedTags.length > 0 && (
                   <button
                     onClick={() => setSelectedTags([])}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-xs text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
                   >
                     Clear all
                   </button>
@@ -171,7 +171,7 @@ export default function RecipesPage() {
                   if (categoryTags.length === 0) return null;
                   return (
                     <div key={category} className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-500 min-w-[100px]">
+                      <span className="text-xs font-medium text-sage-500 min-w-[100px]">
                         {category}:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
@@ -181,8 +181,8 @@ export default function RecipesPage() {
                             onClick={() => handleTagToggle(tag.id)}
                             className={`px-2 py-0.5 rounded-full text-xs font-medium transition ${
                               selectedTags.includes(tag.id)
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-terracotta-600 text-white'
+                                : 'bg-cream-100 text-sage-700 hover:bg-cream-200'
                             }`}
                           >
                             {tag.name}
@@ -200,14 +200,14 @@ export default function RecipesPage() {
         {/* Recipes Grid */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="text-gray-500">Loading recipes...</div>
+            <div className="text-sage-500">Loading recipes...</div>
           </div>
         ) : recipes.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-500 mb-4">No recipes found.</p>
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-sage-200">
+            <p className="text-sage-500 mb-4">No recipes found.</p>
             <Link
               href="/recipes/new"
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors"
             >
               Create your first recipe →
             </Link>

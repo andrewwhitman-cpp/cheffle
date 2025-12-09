@@ -307,7 +307,7 @@ export default function MealPlanPage() {
                       required
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
+                      className="w-full px-4 py-2 bg-white border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
                     />
                   </div>
                   <div>
@@ -317,7 +317,7 @@ export default function MealPlanPage() {
                     <select
                       value={formData.meal_type}
                       onChange={(e) => setFormData({ ...formData, meal_type: e.target.value })}
-                      className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
+                      className="w-full px-4 py-2 bg-white border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
                     >
                       <option value="breakfast">Breakfast</option>
                       <option value="lunch">Lunch</option>
@@ -339,7 +339,7 @@ export default function MealPlanPage() {
                       placeholder="Search recipes..."
                       value={recipeSearchQuery}
                       onChange={(e) => setRecipeSearchQuery(e.target.value)}
-                      className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900"
+                      className="w-full px-4 py-2 bg-white border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 text-sage-900 placeholder:text-sage-400"
                     />
                   </div>
 
