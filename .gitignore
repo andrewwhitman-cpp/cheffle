@@ -1,0 +1,112 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+.env.*
+!.env.example
+.env.development
+.env.production
+.env.test
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# database
+database/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sql
+
+# editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# cache
+.cache/
+.parcel-cache/
+.turbo/
+
+# temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ESLint cache
+.eslintcache
+
+# Security: test credentials and sensitive docs
+TEST_ACCOUNT.md
+*credentials*
+*secrets*
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Backup files that might contain sensitive data
+*.backup
+*.bak
+*.old
+*.orig
+
+# Optional: keep package-lock.json but ignore yarn.lock if you use npm
+# yarn.lock
+
+# Optional: ignore if you don't want to commit these
+# package-lock.json
+# pnpm-lock.yaml
