@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validSkillLevels = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+    const validSkillLevels = ['new_to_cooking', 'comfortable_with_cooking', 'experienced_cook'];
     const skillLevelAdjusted =
       skill_level_adjusted != null && validSkillLevels.includes(String(skill_level_adjusted))
         ? String(skill_level_adjusted)

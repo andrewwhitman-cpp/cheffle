@@ -7,7 +7,7 @@ import { normalizeInstructions } from '@/lib/recipe-display';
 import { adjustRecipeForSkillLevel } from '@/lib/recipe-adjustment';
 import type { SkillLevel } from '@/lib/skill-levels';
 
-const VALID_LEVELS: SkillLevel[] = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+const VALID_LEVELS: SkillLevel[] = ['new_to_cooking', 'comfortable_with_cooking', 'experienced_cook'];
 
 export async function POST(
   request: NextRequest,

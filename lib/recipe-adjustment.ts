@@ -15,7 +15,7 @@ function getOpenAIClient() {
 }
 
 const SKILL_LEVEL_PROMPTS: Record<SkillLevel, string> = {
-  new_to_cooking: `You are adjusting a recipe for someone NEW TO COOKING. They rarely cook and need extra guidance.
+  new_to_cooking: `You are adjusting a recipe for a NEW COOK. They rarely cook and need extra guidance.
 
 Apply ALL of these adjustments to the recipe:
 1. **Prep steps**: Add explicit steps for cutting, chopping, and prepping ingredients BEFORE cooking. (e.g. "Dice the onion", "Mince the garlic", "Cut the chicken into cubes")
@@ -26,7 +26,7 @@ Apply ALL of these adjustments to the recipe:
 6. **Timing help**: Include timing cues (e.g. "This step takes about 5 minutes", "Start the rice first—it takes 20 minutes")
 7. **Alternatives**: Where practical, suggest simpler alternatives (e.g. "Or use pre-diced onions from the store")`,
 
-  cook_occasionally: `You are adjusting a recipe for someone who COOKS OCCASIONALLY. They know basics but appreciate guidance.
+  comfortable_with_cooking: `You are adjusting a recipe for a COMFORTABLE COOK. They know the basics and appreciate moderate guidance.
 
 Apply these adjustments:
 1. **Prep steps**: Add prep steps for ingredients that need cutting/prepping before use. Keep them concise.
@@ -34,13 +34,7 @@ Apply these adjustments:
 3. **Explain terms**: Briefly explain less common terms only (e.g. "blanch", "temper")
 4. **Timing hints**: Add timing cues for longer steps so they can plan`,
 
-  cook_regularly: `You are adjusting a recipe for someone who COOKS REGULARLY. They're comfortable in the kitchen.
-
-Apply light adjustments:
-1. **Reorder if needed**: Ensure steps are in a logical order so components finish together. Only reorder if the original is confusing.
-2. **Timing hints**: Add brief timing cues for steps that take a while`,
-
-  very_experienced: `You are adjusting a recipe for someone VERY EXPERIENCED. They cook frequently and know techniques.
+  experienced_cook: `You are adjusting a recipe for an EXPERIENCED COOK. They cook frequently and know techniques.
 
 Apply minimal adjustments:
 - Only ensure instructions are clear and well-ordered. Do not add extra explanations, prep steps, or safety notes.

@@ -53,10 +53,9 @@ Rules for modifications:
 If the user is just asking a question (not requesting changes), respond in a friendly, helpful way but do NOT include a recipe block. Keep your tone warm and encouraging.`;
 
 const SKILL_LEVEL_INSTRUCTIONS: Record<string, string> = {
-  new_to_cooking: `IMPORTANT - The user is NEW TO COOKING. When you modify the recipe, also apply these adjustments: add explicit prep steps (cutting, chopping), reorder steps for timing, explain cooking terms in parentheses, add brief safety notes, include timing cues, and suggest simpler alternatives where helpful.`,
-  cook_occasionally: `IMPORTANT - The user COOKS OCCASIONALLY. When you modify the recipe, also: add prep steps for ingredients, ensure logical step order, briefly explain less common terms, add timing hints for longer steps.`,
-  cook_regularly: `IMPORTANT - The user COOKS REGULARLY. When you modify the recipe, ensure steps are in logical order and add brief timing cues for longer steps.`,
-  very_experienced: `IMPORTANT - The user is VERY EXPERIENCED. Keep modifications concise. Only ensure instructions are clear and well-ordered.`,
+  new_to_cooking: `IMPORTANT - The user is a NEW COOK. When you modify the recipe, also apply these adjustments: add explicit prep steps (cutting, chopping), reorder steps for timing, explain cooking terms in parentheses, add brief safety notes, include timing cues, and suggest simpler alternatives where helpful.`,
+  comfortable_with_cooking: `IMPORTANT - The user is a COMFORTABLE COOK. When you modify the recipe, also: add prep steps for ingredients, ensure logical step order, briefly explain less common terms, add timing hints for longer steps.`,
+  experienced_cook: `IMPORTANT - The user is an EXPERIENCED COOK. Keep modifications concise. Only ensure instructions are clear and well-ordered.`,
 };
 
 export async function POST(

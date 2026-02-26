@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 import { scaleIngredient } from '@/lib/ingredient-parser';
-import { SKILL_LEVELS, getSkillLevelLabel } from '@/lib/skill-levels';
+import { SKILL_LEVELS, getSkillLevelLabel, getSkillLevelValue } from '@/lib/skill-levels';
 
 interface Ingredient {
   name: string;
@@ -357,7 +357,7 @@ export default function RecipeDetailPage() {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h1 className="text-2xl font-semibold text-sage-900">{decodeHtmlEntities(recipe.name)}</h1>
                   <select
-                    value={recipe.skill_level_adjusted ?? ''}
+                    value={getSkillLevelValue(recipe.skill_level_adjusted)}
                     onChange={(e) => handleSkillLevelChange(e.target.value)}
                     disabled={readjusting}
                     className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed"

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Get user's skill level for recipe adjustment
     const profile = db.prepare('SELECT skill_level FROM users WHERE id = ?').get(user.id) as { skill_level: string | null } | undefined;
     const skillLevel = profile?.skill_level as SkillLevel | null | undefined;
-    const validLevels: SkillLevel[] = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+    const validLevels: SkillLevel[] = ['new_to_cooking', 'comfortable_with_cooking', 'experienced_cook'];
     const shouldAdjust = skillLevel && validLevels.includes(skillLevel);
 
     let recipe: {

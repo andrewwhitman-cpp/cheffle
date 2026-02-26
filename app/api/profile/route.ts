@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest) {
           )
         : null;
 
-    const validSkillLevels = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+    const validSkillLevels = ['new_to_cooking', 'comfortable_with_cooking', 'experienced_cook'];
     const skillLevelValue =
       skill_level != null && validSkillLevels.includes(String(skill_level)) ? String(skill_level) : null;
 
