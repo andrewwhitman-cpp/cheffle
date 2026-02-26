@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { normalizeIngredient } from '@/lib/ingredient-parser';
 import { normalizeInstructions } from '@/lib/recipe-display';
+import { formatKitchenContextForAI } from '@/lib/kitchen-context';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -120,12 +121,26 @@ ${recipeContext.instructions}
 
 Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
 
-    const profile = db.prepare('SELECT skill_level FROM users WHERE id = ?').get(user.id) as { skill_level: string | null } | undefined;
+    const profile = db.prepare('SELECT skill_level, kitchen_context FROM users WHERE id = ?').get(user.id) as {
+      skill_level: string | null;
+      kitchen_context: string | null;
+    } | undefined;
     const skillLevel = profile?.skill_level;
     const skillInstruction = skillLevel && SKILL_LEVEL_INSTRUCTIONS[skillLevel]
       ? `\n\n${SKILL_LEVEL_INSTRUCTIONS[skillLevel]}`
       : '';
-    const systemPrompt = BASE_SYSTEM_PROMPT + skillInstruction;
+    let kitchenContext = null;
+    if (profile?.kitchen_context) {
+      try {
+        kitchenContext = JSON.parse(profile.kitchen_context);
+      } catch {
+        kitchenContext = null;
+      }
+    }
+    const kitchenInstruction = formatKitchenContextForAI(kitchenContext)
+      ? `\n\n${formatKitchenContextForAI(kitchenContext)}`
+      : '';
+    const systemPrompt = BASE_SYSTEM_PROMPT + skillInstruction + kitchenInstruction;
 
     const openai = getOpenAIClient();
 

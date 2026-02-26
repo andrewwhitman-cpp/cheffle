@@ -65,9 +65,20 @@ export async function POST(request: NextRequest) {
 
     const html = await fetchResponse.text();
 
-    // Get user's skill level for recipe adjustment
-    const profile = db.prepare('SELECT skill_level FROM users WHERE id = ?').get(user.id) as { skill_level: string | null } | undefined;
+    // Get user's skill level and kitchen context for recipe adjustment
+    const profile = db.prepare('SELECT skill_level, kitchen_context FROM users WHERE id = ?').get(user.id) as {
+      skill_level: string | null;
+      kitchen_context: string | null;
+    } | undefined;
     const skillLevel = profile?.skill_level as SkillLevel | null | undefined;
+    let kitchenContext = null;
+    if (profile?.kitchen_context) {
+      try {
+        kitchenContext = JSON.parse(profile.kitchen_context);
+      } catch {
+        kitchenContext = null;
+      }
+    }
     const validLevels: SkillLevel[] = ['new_to_cooking', 'comfortable_with_cooking', 'experienced_cook'];
     const shouldAdjust = skillLevel && validLevels.includes(skillLevel);
 
@@ -103,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     // Apply skill-level adjustment if user has one set
     if (shouldAdjust && skillLevel) {
-      const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel);
+      const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel, kitchenContext);
       recipe = { ...adjusted, source_url: url, skill_level_adjusted: skillLevel };
     }
 

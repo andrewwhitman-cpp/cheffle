@@ -7,6 +7,7 @@ import type { ParsedRecipe } from './recipe-parser';
 import { normalizeInstructions } from './recipe-display';
 import { normalizeIngredient } from './ingredient-parser';
 import type { SkillLevel } from './skill-levels';
+import { formatKitchenContextForAI, type KitchenContext } from './kitchen-context';
 
 function getOpenAIClient() {
   const key = process.env.OPENAI_API_KEY;
@@ -52,10 +53,13 @@ export interface AdjustableRecipe {
 
 export async function adjustRecipeForSkillLevel(
   recipe: AdjustableRecipe,
-  skillLevel: SkillLevel
+  skillLevel: SkillLevel,
+  kitchenContext?: KitchenContext | null
 ): Promise<AdjustableRecipe> {
   const openai = getOpenAIClient();
   const levelPrompt = SKILL_LEVEL_PROMPTS[skillLevel];
+  const kitchenPrompt = formatKitchenContextForAI(kitchenContext);
+  const kitchenBlock = kitchenPrompt ? `\n\n${kitchenPrompt}` : '';
 
   const recipeJson = JSON.stringify({
     name: recipe.name,
@@ -71,7 +75,7 @@ export async function adjustRecipeForSkillLevel(
     messages: [
       {
         role: 'system',
-        content: `${levelPrompt}
+        content: `${levelPrompt}${kitchenBlock}
 
 Return the adjusted recipe as JSON only. Use this exact format:
 \`\`\`json

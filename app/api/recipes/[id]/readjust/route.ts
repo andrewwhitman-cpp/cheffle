@@ -114,7 +114,19 @@ export async function POST(
         cook_time: recipe.cook_time || 0,
       };
 
-      const adjusted = await adjustRecipeForSkillLevel(currentRecipe, skill_level as SkillLevel);
+      let kitchenContext = null;
+      const profile = db.prepare('SELECT kitchen_context FROM users WHERE id = ?').get(user.id) as {
+        kitchen_context: string | null;
+      } | undefined;
+      if (profile?.kitchen_context) {
+        try {
+          kitchenContext = JSON.parse(profile.kitchen_context);
+        } catch {
+          kitchenContext = null;
+        }
+      }
+
+      const adjusted = await adjustRecipeForSkillLevel(currentRecipe, skill_level as SkillLevel, kitchenContext);
 
       db.prepare(`
         UPDATE recipes

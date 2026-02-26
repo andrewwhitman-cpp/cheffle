@@ -44,6 +44,11 @@ export function initDatabase() {
   } catch {
     // Column already exists
   }
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN kitchen_context TEXT`);
+  } catch {
+    // Column already exists
+  }
 
   // Recipes table
   db.exec(`
