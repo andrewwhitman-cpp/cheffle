@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { normalizeIngredient } from '@/lib/ingredient-parser';
+import { normalizeInstructions } from '@/lib/recipe-display';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -159,11 +160,12 @@ Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
         const ings = parsed.ingredients || [];
         const normalizedIngredients = ings.map((ing) => normalizeIngredient(ing));
 
+        const rawInstructions = parsed.instructions || recipeContext.instructions;
         modifiedRecipe = {
           name: parsed.name || recipeContext.name,
           description: parsed.description || recipeContext.description,
           ingredients: normalizedIngredients,
-          instructions: parsed.instructions || recipeContext.instructions,
+          instructions: normalizeInstructions(rawInstructions) || rawInstructions,
           prep_time: parsed.prep_time ?? recipeContext.prep_time,
           cook_time: parsed.cook_time ?? recipeContext.cook_time,
         };

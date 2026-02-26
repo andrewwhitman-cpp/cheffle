@@ -63,3 +63,13 @@ export function parseInstructionsToSteps(instructions: string): string[] {
   const byNewline = trimmed.split(/\n+/).map((s) => s.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
   return byNewline.length > 0 ? byNewline : [trimmed];
 }
+
+/**
+ * Normalize instructions to canonical format: "1. Step one\n\n2. Step two\n\n3. Step three"
+ * Use when loading into edit form so both read-only and edit views show consistent formatting.
+ */
+export function normalizeInstructions(instructions: string): string {
+  const steps = parseInstructionsToSteps(instructions);
+  if (steps.length === 0) return instructions.trim();
+  return steps.map((step, i) => `${i + 1}. ${step}`).join('\n\n');
+}

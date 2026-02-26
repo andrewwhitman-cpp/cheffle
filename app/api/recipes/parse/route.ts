@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { extractRecipeFromJsonLd, cleanHtmlForAi } from '@/lib/recipe-parser';
 import { extractRecipeWithAi } from '@/lib/openai';
+import { normalizeInstructions } from '@/lib/recipe-display';
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
     if (jsonLdRecipe && jsonLdRecipe.name && jsonLdRecipe.instructions) {
       return NextResponse.json({
         ...jsonLdRecipe,
+        instructions: normalizeInstructions(jsonLdRecipe.instructions) || jsonLdRecipe.instructions,
         source_url: url,
       });
     }
@@ -76,6 +78,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ...aiRecipe,
+      instructions: normalizeInstructions(aiRecipe.instructions) || aiRecipe.instructions,
       source_url: url,
     });
   } catch (error: any) {

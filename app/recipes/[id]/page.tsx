@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
-import { decodeHtmlEntities, parseInstructionsToSteps } from '@/lib/recipe-display';
+import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 
 interface Ingredient {
@@ -74,12 +74,13 @@ export default function RecipeDetailPage() {
 
       const data = await res.json();
       setRecipe(data);
+      const decodedInstructions = decodeHtmlEntities(data.instructions || '');
       setFormData({
         name: decodeHtmlEntities(data.name),
         description: decodeHtmlEntities(data.description || ''),
         prep_time: String(data.prep_time),
         cook_time: String(data.cook_time),
-        instructions: decodeHtmlEntities(data.instructions || ''),
+        instructions: normalizeInstructions(decodedInstructions) || decodedInstructions,
         source_url: data.source_url || '',
       });
       setIngredients(data.ingredients || []);
@@ -104,6 +105,7 @@ export default function RecipeDetailPage() {
         },
         body: JSON.stringify({
           ...formData,
+          instructions: normalizeInstructions(formData.instructions) || formData.instructions,
           prep_time: parseInt(formData.prep_time, 10) || 0,
           cook_time: parseInt(formData.cook_time, 10) || 0,
           ingredients: ingredients.filter((ing) => ing.name.trim() !== ''),
@@ -218,7 +220,7 @@ export default function RecipeDetailPage() {
           name: pendingRecipe.name,
           description: pendingRecipe.description,
           ingredients: pendingRecipe.ingredients,
-          instructions: pendingRecipe.instructions,
+          instructions: normalizeInstructions(pendingRecipe.instructions) || pendingRecipe.instructions,
           prep_time: pendingRecipe.prep_time,
           cook_time: pendingRecipe.cook_time,
           source_url: recipe.source_url,
