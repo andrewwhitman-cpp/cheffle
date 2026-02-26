@@ -25,9 +25,10 @@ interface RecipeForChat {
   instructions: string;
   prep_time: number;
   cook_time: number;
+  skill_level_adjusted?: string | null;
 }
 
-const SYSTEM_PROMPT = `You are Cheffle, a warm and friendly recipe assistant. You love helping people cook! The user is viewing a recipe and can ask you to modify it.
+const BASE_SYSTEM_PROMPT = `You are Cheffle, a warm and friendly recipe assistant. You love helping people cook! The user is viewing a recipe and can ask you to modify it.
 
 When the user asks for changes (e.g. "add rice", "remove garlic", "double the recipe", "make it vegetarian"):
 1. Respond in a warm, conversational way—like a helpful friend in the kitchen. Use "I" and "you." Briefly explain what you changed and why it works.
@@ -50,6 +51,13 @@ Rules for modifications:
 - prep_time and cook_time: integers in minutes.
 
 If the user is just asking a question (not requesting changes), respond in a friendly, helpful way but do NOT include a recipe block. Keep your tone warm and encouraging.`;
+
+const SKILL_LEVEL_INSTRUCTIONS: Record<string, string> = {
+  new_to_cooking: `IMPORTANT - The user is NEW TO COOKING. When you modify the recipe, also apply these adjustments: add explicit prep steps (cutting, chopping), reorder steps for timing, explain cooking terms in parentheses, add brief safety notes, include timing cues, and suggest simpler alternatives where helpful.`,
+  cook_occasionally: `IMPORTANT - The user COOKS OCCASIONALLY. When you modify the recipe, also: add prep steps for ingredients, ensure logical step order, briefly explain less common terms, add timing hints for longer steps.`,
+  cook_regularly: `IMPORTANT - The user COOKS REGULARLY. When you modify the recipe, ensure steps are in logical order and add brief timing cues for longer steps.`,
+  very_experienced: `IMPORTANT - The user is VERY EXPERIENCED. Keep modifications concise. Only ensure instructions are clear and well-ordered.`,
+};
 
 export async function POST(
   request: NextRequest,
@@ -113,10 +121,17 @@ ${recipeContext.instructions}
 
 Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
 
+    const profile = db.prepare('SELECT skill_level FROM users WHERE id = ?').get(user.id) as { skill_level: string | null } | undefined;
+    const skillLevel = profile?.skill_level;
+    const skillInstruction = skillLevel && SKILL_LEVEL_INSTRUCTIONS[skillLevel]
+      ? `\n\n${SKILL_LEVEL_INSTRUCTIONS[skillLevel]}`
+      : '';
+    const systemPrompt = BASE_SYSTEM_PROMPT + skillInstruction;
+
     const openai = getOpenAIClient();
 
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: `${recipeBlock}\n\n---\nThe user will now send messages. Remember to include the full modified recipe as JSON when you make changes.` },
     ];
 
@@ -168,6 +183,7 @@ Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
           instructions: normalizeInstructions(rawInstructions) || rawInstructions,
           prep_time: parsed.prep_time ?? recipeContext.prep_time,
           cook_time: parsed.cook_time ?? recipeContext.cook_time,
+          skill_level_adjusted: skillLevel || recipe.skill_level_adjusted || null,
         };
       } catch {
         // Ignore parse errors

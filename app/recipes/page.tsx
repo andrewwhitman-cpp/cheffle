@@ -12,6 +12,7 @@ interface Recipe {
   prep_time: number;
   cook_time: number;
   source_url?: string;
+  skill_level_adjusted?: string | null;
 }
 
 export default function RecipesPage() {

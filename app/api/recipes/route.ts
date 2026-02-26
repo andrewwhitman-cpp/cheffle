@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         r.prep_time,
         r.cook_time,
         r.source_url,
+        r.skill_level_adjusted,
         r.created_at,
         r.updated_at
       FROM recipes r
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, ingredients, instructions, prep_time, cook_time, source_url } = body;
+    const { name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted } = body;
 
     if (!name || !instructions) {
       return NextResponse.json(
@@ -87,10 +88,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const validSkillLevels = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+    const skillLevelAdjusted =
+      skill_level_adjusted != null && validSkillLevels.includes(String(skill_level_adjusted))
+        ? String(skill_level_adjusted)
+        : null;
+
     const result = db
       .prepare(`
-        INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time, source_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         user.id,
@@ -100,7 +107,8 @@ export async function POST(request: NextRequest) {
         instructions,
         prep_time || 0,
         cook_time || 0,
-        source_url || null
+        source_url || null,
+        skillLevelAdjusted
       );
 
     const recipeId = result.lastInsertRowid as number;

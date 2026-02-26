@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { extractRecipeFromJsonLd, cleanHtmlForAi } from '@/lib/recipe-parser';
 import { extractRecipeWithAi } from '@/lib/openai';
 import { normalizeInstructions } from '@/lib/recipe-display';
+import { adjustRecipeForSkillLevel } from '@/lib/recipe-adjustment';
+import type { SkillLevel } from '@/lib/skill-levels';
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,25 +65,49 @@ export async function POST(request: NextRequest) {
 
     const html = await fetchResponse.text();
 
+    // Get user's skill level for recipe adjustment
+    const profile = db.prepare('SELECT skill_level FROM users WHERE id = ?').get(user.id) as { skill_level: string | null } | undefined;
+    const skillLevel = profile?.skill_level as SkillLevel | null | undefined;
+    const validLevels: SkillLevel[] = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+    const shouldAdjust = skillLevel && validLevels.includes(skillLevel);
+
+    let recipe: {
+      name: string;
+      description: string;
+      ingredients: Array<{ name: string; quantity: string; unit: string }>;
+      instructions: string;
+      prep_time: number;
+      cook_time: number;
+      source_url?: string;
+      skill_level_adjusted?: string | null;
+    };
+
     // Try JSON-LD first
     const jsonLdRecipe = extractRecipeFromJsonLd(html);
     if (jsonLdRecipe && jsonLdRecipe.name && jsonLdRecipe.instructions) {
-      return NextResponse.json({
+      recipe = {
         ...jsonLdRecipe,
         instructions: normalizeInstructions(jsonLdRecipe.instructions) || jsonLdRecipe.instructions,
         source_url: url,
-      });
+      };
+    } else {
+      // Fallback to AI
+      const cleanedHtml = cleanHtmlForAi(html);
+      const aiRecipe = await extractRecipeWithAi(cleanedHtml);
+      recipe = {
+        ...aiRecipe,
+        instructions: normalizeInstructions(aiRecipe.instructions) || aiRecipe.instructions,
+        source_url: url,
+      };
     }
 
-    // Fallback to AI
-    const cleanedHtml = cleanHtmlForAi(html);
-    const aiRecipe = await extractRecipeWithAi(cleanedHtml);
+    // Apply skill-level adjustment if user has one set
+    if (shouldAdjust && skillLevel) {
+      const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel);
+      recipe = { ...adjusted, source_url: url, skill_level_adjusted: skillLevel };
+    }
 
-    return NextResponse.json({
-      ...aiRecipe,
-      instructions: normalizeInstructions(aiRecipe.instructions) || aiRecipe.instructions,
-      source_url: url,
-    });
+    return NextResponse.json(recipe);
   } catch (error: any) {
     if (error.name === 'AbortError') {
       return NextResponse.json(

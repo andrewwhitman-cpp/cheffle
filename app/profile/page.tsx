@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { SKILL_LEVELS } from '@/lib/skill-levels';
 
 export default function ProfilePage() {
   const [displayName, setDisplayName] = useState('');
   const [dietaryPreferences, setDietaryPreferences] = useState('');
+  const [skillLevel, setSkillLevel] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -28,6 +30,7 @@ export default function ProfilePage() {
             ? data.dietary_preferences.join(', ')
             : data.dietary_preferences || ''
         );
+        setSkillLevel(data.skill_level || '');
       }
     } catch (err) {
       setError('Failed to load profile');
@@ -57,6 +60,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           display_name: displayName || null,
           dietary_preferences: prefs,
+          skill_level: skillLevel || null,
         }),
       });
 
@@ -104,6 +108,27 @@ export default function ProfilePage() {
               className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
               placeholder="Your name"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-sage-700 mb-2">
+              Cooking skill level
+            </label>
+            <p className="text-xs text-sage-500 mb-2">
+              Recipes you import or modify will be adjusted for your level. This affects instructions, prep steps, and tips.
+            </p>
+            <select
+              value={skillLevel}
+              onChange={(e) => setSkillLevel(e.target.value)}
+              className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white"
+            >
+              <option value="">No adjustment (use recipe as-is)</option>
+              {SKILL_LEVELS.map((level) => (
+                <option key={level.value} value={level.value}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

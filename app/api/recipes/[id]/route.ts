@@ -70,7 +70,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description, ingredients, instructions, prep_time, cook_time, source_url } = body;
+    const { name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted } = body;
 
     if (!name || !instructions) {
       return NextResponse.json(
@@ -79,10 +79,18 @@ export async function PUT(
       );
     }
 
+    const validSkillLevels = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+    const skillLevelAdjusted =
+      skill_level_adjusted != null && validSkillLevels.includes(String(skill_level_adjusted))
+        ? String(skill_level_adjusted)
+        : undefined;
+
     db.prepare(`
       UPDATE recipes 
       SET name = ?, description = ?, ingredients = ?, instructions = ?, 
-          prep_time = ?, cook_time = ?, source_url = ?, updated_at = CURRENT_TIMESTAMP
+          prep_time = ?, cook_time = ?, source_url = ?, 
+          skill_level_adjusted = COALESCE(?, skill_level_adjusted),
+          updated_at = CURRENT_TIMESTAMP
       WHERE id = ? AND user_id = ?
     `).run(
       name,
@@ -92,6 +100,7 @@ export async function PUT(
       prep_time || 0,
       cook_time || 0,
       source_url ?? null,
+      skillLevelAdjusted ?? null,
       recipeId,
       user.id
     );

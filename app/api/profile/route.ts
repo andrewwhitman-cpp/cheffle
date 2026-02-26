@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     const row = db
       .prepare(
-        'SELECT id, username, email, display_name, dietary_preferences, created_at FROM users WHERE id = ?'
+        'SELECT id, username, email, display_name, dietary_preferences, skill_level, created_at FROM users WHERE id = ?'
       )
       .get(user.id) as {
       id: number;
@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       email: string;
       display_name: string | null;
       dietary_preferences: string | null;
+      skill_level: string | null;
       created_at: string;
     };
 
@@ -69,7 +70,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { display_name, dietary_preferences } = body;
+    const { display_name, dietary_preferences, skill_level } = body;
 
     const dietaryStr =
       dietary_preferences != null
@@ -82,17 +83,22 @@ export async function PUT(request: NextRequest) {
           )
         : null;
 
+    const validSkillLevels = ['new_to_cooking', 'cook_occasionally', 'cook_regularly', 'very_experienced'];
+    const skillLevelValue =
+      skill_level != null && validSkillLevels.includes(String(skill_level)) ? String(skill_level) : null;
+
     db.prepare(
-      'UPDATE users SET display_name = ?, dietary_preferences = ? WHERE id = ?'
+      'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ? WHERE id = ?'
     ).run(
       display_name != null ? String(display_name) : null,
       dietaryStr,
+      skillLevelValue,
       user.id
     );
 
     const row = db
       .prepare(
-        'SELECT id, username, email, display_name, dietary_preferences, created_at FROM users WHERE id = ?'
+        'SELECT id, username, email, display_name, dietary_preferences, skill_level, created_at FROM users WHERE id = ?'
       )
       .get(user.id) as {
       id: number;
@@ -100,6 +106,7 @@ export async function PUT(request: NextRequest) {
       email: string;
       display_name: string | null;
       dietary_preferences: string | null;
+      skill_level: string | null;
       created_at: string;
     };
 

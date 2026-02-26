@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 import { scaleIngredient } from '@/lib/ingredient-parser';
+import { SKILL_LEVELS, getSkillLevelLabel } from '@/lib/skill-levels';
 
 interface Ingredient {
   name: string;
@@ -23,6 +24,7 @@ interface Recipe {
   prep_time: number;
   cook_time: number;
   source_url?: string;
+  skill_level_adjusted?: string | null;
 }
 
 interface ChatMessage {
@@ -37,6 +39,7 @@ interface ModifiedRecipe {
   instructions: string;
   prep_time: number;
   cook_time: number;
+  skill_level_adjusted?: string | null;
 }
 
 export default function RecipeDetailPage() {
@@ -61,6 +64,7 @@ export default function RecipeDetailPage() {
   const [pendingRecipe, setPendingRecipe] = useState<ModifiedRecipe | null>(null);
   const [servingScale, setServingScale] = useState(1);
   const [scaleInput, setScaleInput] = useState('1');
+  const [readjusting, setReadjusting] = useState(false);
 
   const parseScaleInput = (value: string): number | null => {
     const trimmed = value.trim();
@@ -225,6 +229,46 @@ export default function RecipeDetailPage() {
     }
   };
 
+  const handleSkillLevelChange = async (newLevel: string) => {
+    if (!recipe || readjusting) return;
+    const currentLevel = recipe.skill_level_adjusted ?? '';
+    if (newLevel === currentLevel) return;
+
+    setError('');
+    setReadjusting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/recipes/${params.id}/readjust`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          skill_level: newLevel === '' ? null : newLevel,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to adjust recipe');
+
+      setRecipe(data);
+      setFormData((prev) => ({
+        ...prev,
+        name: data.name,
+        description: data.description || '',
+        prep_time: String(data.prep_time),
+        cook_time: String(data.cook_time),
+        instructions: data.instructions || '',
+      }));
+      setIngredients(data.ingredients || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to adjust recipe');
+    } finally {
+      setReadjusting(false);
+    }
+  };
+
   const handleApplyChanges = async () => {
     if (!pendingRecipe || !recipe) return;
 
@@ -245,6 +289,7 @@ export default function RecipeDetailPage() {
           prep_time: pendingRecipe.prep_time,
           cook_time: pendingRecipe.cook_time,
           source_url: recipe.source_url,
+          skill_level_adjusted: pendingRecipe.skill_level_adjusted ?? recipe.skill_level_adjusted ?? null,
         }),
       });
 
@@ -309,7 +354,27 @@ export default function RecipeDetailPage() {
           <div className="bg-white rounded-lg border border-sage-200 p-6">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h1 className="text-2xl font-semibold text-sage-900 mb-2">{decodeHtmlEntities(recipe.name)}</h1>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h1 className="text-2xl font-semibold text-sage-900">{decodeHtmlEntities(recipe.name)}</h1>
+                  <select
+                    value={recipe.skill_level_adjusted ?? ''}
+                    onChange={(e) => handleSkillLevelChange(e.target.value)}
+                    disabled={readjusting}
+                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="" disabled={!recipe.source_url}>
+                      {recipe.source_url ? 'No adjustment' : '—'}
+                    </option>
+                    {SKILL_LEVELS.map((level) => (
+                      <option key={level.value} value={level.value}>
+                        Adjusted for {level.label}
+                      </option>
+                    ))}
+                  </select>
+                  {readjusting && (
+                    <span className="text-xs text-sage-500">Adjusting...</span>
+                  )}
+                </div>
                 {displayDescription && (
                   <p className="text-sage-600">{displayDescription}</p>
                 )}

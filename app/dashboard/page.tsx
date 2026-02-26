@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
+import { getSkillLevelLabel } from '@/lib/skill-levels';
 
 interface Recipe {
   id: number;
@@ -11,6 +12,7 @@ interface Recipe {
   prep_time: number;
   cook_time: number;
   source_url?: string;
+  skill_level_adjusted?: string | null;
 }
 
 interface ParsedRecipe {
@@ -21,6 +23,7 @@ interface ParsedRecipe {
   prep_time: number;
   cook_time: number;
   source_url?: string;
+  skill_level_adjusted?: string | null;
 }
 
 export default function DashboardPage() {
@@ -102,6 +105,7 @@ export default function DashboardPage() {
           prep_time: preview.prep_time,
           cook_time: preview.cook_time,
           source_url: preview.source_url,
+          skill_level_adjusted: preview.skill_level_adjusted ?? null,
         }),
       });
 
@@ -158,7 +162,14 @@ export default function DashboardPage() {
 
           {preview && (
             <div className="mt-4 p-6 bg-white border border-sage-200 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-sage-900 mb-2">{preview.name}</h3>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <h3 className="text-lg font-semibold text-sage-900">{preview.name}</h3>
+                {preview.skill_level_adjusted && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800">
+                    Adjusted for {getSkillLevelLabel(preview.skill_level_adjusted)}
+                  </span>
+                )}
+              </div>
               {preview.description && (
                 <p className="text-sm text-sage-600 mb-4 line-clamp-2">{preview.description}</p>
               )}
@@ -210,7 +221,14 @@ export default function DashboardPage() {
                   href={`/recipes/${recipe.id}`}
                   className="block p-4 border border-sage-200 rounded-lg hover:border-terracotta-300 hover:shadow-sm transition"
                 >
-                  <div className="font-medium text-sage-900">{recipe.name}</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-sage-900">{recipe.name}</span>
+                    {recipe.skill_level_adjusted && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800">
+                        Adjusted for {getSkillLevelLabel(recipe.skill_level_adjusted)}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-sage-500 mt-0.5">
                     {recipe.prep_time + recipe.cook_time} min
                   </div>

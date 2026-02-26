@@ -39,6 +39,11 @@ export function initDatabase() {
   } catch {
     // Column already exists
   }
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN skill_level TEXT`);
+  } catch {
+    // Column already exists
+  }
 
   // Recipes table
   db.exec(`
@@ -61,6 +66,11 @@ export function initDatabase() {
   // Migrate existing recipes table: add source_url if missing
   try {
     db.exec(`ALTER TABLE recipes ADD COLUMN source_url TEXT`);
+  } catch {
+    // Column already exists
+  }
+  try {
+    db.exec(`ALTER TABLE recipes ADD COLUMN skill_level_adjusted TEXT`);
   } catch {
     // Column already exists
   }
