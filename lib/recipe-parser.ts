@@ -2,6 +2,8 @@
  * Recipe parser: JSON-LD extraction and HTML cleaning for AI fallback.
  */
 
+import { parseIngredientString } from './ingredient-parser';
+
 /**
  * Decode common HTML entities in extracted text.
  */
@@ -52,40 +54,6 @@ function parseIsoDuration(iso?: string): number {
   const minutes = parseInt(match[2] || '0', 10);
   const seconds = parseInt(match[3] || '0', 10);
   return hours * 60 + minutes + Math.round(seconds / 60);
-}
-
-/**
- * Parse ingredient string to {name, quantity, unit}.
- * Handles formats like "2 cups flour", "1 tsp salt", "3 eggs".
- */
-function parseIngredientString(str: string): { name: string; quantity: string; unit: string } {
-  const trimmed = str.trim();
-  if (!trimmed) return { name: '', quantity: '', unit: '' };
-
-  // Common units for matching
-  const units = [
-    'cup', 'cups', 'tbsp', 'tablespoon', 'tablespoons', 'tsp', 'teaspoon', 'teaspoons',
-    'oz', 'ounce', 'ounces', 'lb', 'lbs', 'pound', 'pounds', 'g', 'gram', 'grams',
-    'kg', 'ml', 'cl', 'pinch', 'dash', 'can', 'cans', 'clove', 'cloves',
-    'slice', 'slices', 'piece', 'pieces', 'stalk', 'stalks', 'bunch', 'sprig', 'sprigs'
-  ];
-
-  // Match: optional number + optional fraction + optional unit + rest is name
-  const fractionMatch = trimmed.match(/^(\d+\/\d+|\d+\.?\d*)\s*/);
-  if (fractionMatch) {
-    const quantity = fractionMatch[1].trim();
-    const rest = trimmed.slice(fractionMatch[0].length);
-    for (const unit of units) {
-      const re = new RegExp(`^(${unit}s?)\\s+(.+)$`, 'i');
-      const m = rest.match(re);
-      if (m) {
-        return { quantity, unit: m[1], name: m[2].trim() };
-      }
-    }
-    return { quantity, unit: '', name: rest.trim() };
-  }
-
-  return { name: trimmed, quantity: '', unit: '' };
 }
 
 /**

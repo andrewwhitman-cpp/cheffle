@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import type { ParsedRecipe } from './recipe-parser';
 import { decodeHtmlEntities } from './recipe-display';
+import { parseIngredientString } from './ingredient-parser';
 
 function getOpenAIClient() {
   const key = process.env.OPENAI_API_KEY;
@@ -28,37 +29,6 @@ Rules:
 - Use plain apostrophes (') not HTML entities
 - prepTime and cookTime: integers in minutes, use 0 if unknown
 - If no recipe is found, return {"name": "Unknown", "description": "", "ingredients": [], "instructions": "No recipe found.", "prepTime": 0, "cookTime": 0, "servings": ""}`;
-
-/**
- * Parse ingredient string to {name, quantity, unit} format.
- */
-function parseIngredientString(str: string): { name: string; quantity: string; unit: string } {
-  const trimmed = str.trim();
-  if (!trimmed) return { name: '', quantity: '', unit: '' };
-
-  const units = [
-    'cup', 'cups', 'tbsp', 'tablespoon', 'tablespoons', 'tsp', 'teaspoon', 'teaspoons',
-    'oz', 'ounce', 'ounces', 'lb', 'lbs', 'pound', 'pounds', 'g', 'gram', 'grams',
-    'kg', 'ml', 'cl', 'pinch', 'dash', 'can', 'cans', 'clove', 'cloves',
-    'slice', 'slices', 'piece', 'pieces', 'stalk', 'stalks', 'bunch', 'sprig', 'sprigs'
-  ];
-
-  const fractionMatch = trimmed.match(/^(\d+\/\d+|\d+\.?\d*)\s*/);
-  if (fractionMatch) {
-    const quantity = fractionMatch[1].trim();
-    const rest = trimmed.slice(fractionMatch[0].length);
-    for (const unit of units) {
-      const re = new RegExp(`^(${unit}s?)\\s+(.+)$`, 'i');
-      const m = rest.match(re);
-      if (m) {
-        return { quantity, unit: m[1], name: m[2].trim() };
-      }
-    }
-    return { quantity, unit: '', name: rest.trim() };
-  }
-
-  return { name: trimmed, quantity: '', unit: '' };
-}
 
 export async function extractRecipeWithAi(html: string): Promise<ParsedRecipe> {
   const openai = getOpenAIClient();

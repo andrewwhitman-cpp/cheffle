@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
+import { normalizeIngredient } from '@/lib/ingredient-parser';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -156,11 +157,7 @@ Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
         };
 
         const ings = parsed.ingredients || [];
-        const normalizedIngredients = ings.map((ing) =>
-          typeof ing === 'string'
-            ? { name: ing, quantity: '', unit: '' }
-            : { name: ing.name || '', quantity: ing.quantity || '', unit: ing.unit || '' }
-        );
+        const normalizedIngredients = ings.map((ing) => normalizeIngredient(ing));
 
         modifiedRecipe = {
           name: parsed.name || recipeContext.name,
