@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const tagFilter = searchParams.get('tags');
     const search = searchParams.get('search');
     const limit = searchParams.get('limit');
 
@@ -28,22 +27,13 @@ export async function GET(request: NextRequest) {
         r.instructions,
         r.prep_time,
         r.cook_time,
+        r.source_url,
         r.created_at,
         r.updated_at
       FROM recipes r
       WHERE r.user_id = ?
     `;
-    const params: any[] = [user.id];
-
-    if (tagFilter) {
-      const tagIds = tagFilter.split(',').map(Number);
-      query += ` AND r.id IN (
-        SELECT DISTINCT recipe_id 
-        FROM recipe_tags 
-        WHERE tag_id IN (${tagIds.map(() => '?').join(',')})
-      )`;
-      params.push(...tagIds);
-    }
+    const params: (string | number)[] = [user.id];
 
     if (search) {
       query += ` AND (r.name LIKE ? OR r.description LIKE ?)`;
@@ -55,30 +45,17 @@ export async function GET(request: NextRequest) {
 
     if (limit) {
       query += ` LIMIT ?`;
-      params.push(parseInt(limit));
+      params.push(parseInt(limit, 10));
     }
 
     const recipes = db.prepare(query).all(...params) as any[];
 
-    // Get tags for each recipe
-    const recipesWithTags = recipes.map((recipe) => {
-      const tags = db
-        .prepare(`
-          SELECT t.id, t.name, t.color
-          FROM tags t
-          INNER JOIN recipe_tags rt ON t.id = rt.tag_id
-          WHERE rt.recipe_id = ?
-        `)
-        .all(recipe.id) as Array<{ id: number; name: string; color?: string }>;
+    const result = recipes.map((recipe) => ({
+      ...recipe,
+      ingredients: JSON.parse(recipe.ingredients || '[]'),
+    }));
 
-      return {
-        ...recipe,
-        ingredients: JSON.parse(recipe.ingredients || '[]'),
-        tags,
-      };
-    });
-
-    return NextResponse.json(recipesWithTags);
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Get recipes error:', error);
     return NextResponse.json(
@@ -101,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, ingredients, instructions, prep_time, cook_time, tagIds } = body;
+    const { name, description, ingredients, instructions, prep_time, cook_time, source_url } = body;
 
     if (!name || !instructions) {
       return NextResponse.json(
@@ -110,11 +87,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert recipe
     const result = db
       .prepare(`
-        INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time, source_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         user.id,
@@ -123,46 +99,18 @@ export async function POST(request: NextRequest) {
         JSON.stringify(ingredients || []),
         instructions,
         prep_time || 0,
-        cook_time || 0
+        cook_time || 0,
+        source_url || null
       );
 
     const recipeId = result.lastInsertRowid as number;
-
-    // Add tags if provided
-    if (tagIds && Array.isArray(tagIds) && tagIds.length > 0) {
-      const insertTag = db.prepare(
-        'INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (?, ?)'
-      );
-      const insertTags = db.transaction((tags: number[]) => {
-        for (const tagId of tags) {
-          try {
-            insertTag.run(recipeId, tagId);
-          } catch (error) {
-            // Ignore duplicate tag errors
-          }
-        }
-      });
-      insertTags(tagIds);
-    }
-
-    // Fetch the created recipe with tags
     const recipe = db
       .prepare('SELECT * FROM recipes WHERE id = ?')
       .get(recipeId) as any;
 
-    const tags = db
-      .prepare(`
-        SELECT t.id, t.name, t.color
-        FROM tags t
-        INNER JOIN recipe_tags rt ON t.id = rt.tag_id
-        WHERE rt.recipe_id = ?
-      `)
-      .all(recipeId) as Array<{ id: number; name: string; color?: string }>;
-
     return NextResponse.json({
       ...recipe,
       ingredients: JSON.parse(recipe.ingredients || '[]'),
-      tags,
     });
   } catch (error: any) {
     console.error('Create recipe error:', error);

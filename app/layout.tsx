@@ -7,8 +7,8 @@ import Navigation from '@/components/Navigation';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Cheffle - Meal Planning App',
-  description: 'Plan your meals, manage recipes, and generate shopping lists',
+  title: 'Cheffle - AI Recipe App',
+  description: 'Add recipes from any URL. Your AI-native recipe collection.',
 };
 
 export default function RootLayout({

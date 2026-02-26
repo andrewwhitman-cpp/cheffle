@@ -17,7 +17,7 @@ export async function GET(
       );
     }
 
-    const recipeId = parseInt(params.id);
+    const recipeId = parseInt(params.id, 10);
     const recipe = db
       .prepare('SELECT * FROM recipes WHERE id = ? AND user_id = ?')
       .get(recipeId, user.id) as any;
@@ -29,20 +29,9 @@ export async function GET(
       );
     }
 
-    // Get tags
-    const tags = db
-      .prepare(`
-        SELECT t.id, t.name, t.color
-        FROM tags t
-        INNER JOIN recipe_tags rt ON t.id = rt.tag_id
-        WHERE rt.recipe_id = ?
-      `)
-      .all(recipeId) as Array<{ id: number; name: string; color?: string }>;
-
     return NextResponse.json({
       ...recipe,
       ingredients: JSON.parse(recipe.ingredients || '[]'),
-      tags,
     });
   } catch (error: any) {
     console.error('Get recipe error:', error);
@@ -68,9 +57,7 @@ export async function PUT(
       );
     }
 
-    const recipeId = parseInt(params.id);
-
-    // Check if recipe exists and belongs to user
+    const recipeId = parseInt(params.id, 10);
     const existingRecipe = db
       .prepare('SELECT id FROM recipes WHERE id = ? AND user_id = ?')
       .get(recipeId, user.id);
@@ -83,7 +70,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description, ingredients, instructions, prep_time, cook_time, tagIds } = body;
+    const { name, description, ingredients, instructions, prep_time, cook_time, source_url } = body;
 
     if (!name || !instructions) {
       return NextResponse.json(
@@ -92,11 +79,10 @@ export async function PUT(
       );
     }
 
-    // Update recipe
     db.prepare(`
       UPDATE recipes 
       SET name = ?, description = ?, ingredients = ?, instructions = ?, 
-          prep_time = ?, cook_time = ?, updated_at = CURRENT_TIMESTAMP
+          prep_time = ?, cook_time = ?, source_url = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ? AND user_id = ?
     `).run(
       name,
@@ -105,47 +91,18 @@ export async function PUT(
       instructions,
       prep_time || 0,
       cook_time || 0,
+      source_url ?? null,
       recipeId,
       user.id
     );
 
-    // Update tags
-    db.prepare('DELETE FROM recipe_tags WHERE recipe_id = ?').run(recipeId);
-
-    if (tagIds && Array.isArray(tagIds) && tagIds.length > 0) {
-      const insertTag = db.prepare(
-        'INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (?, ?)'
-      );
-      const insertTags = db.transaction((tags: number[]) => {
-        for (const tagId of tags) {
-          try {
-            insertTag.run(recipeId, tagId);
-          } catch (error) {
-            // Ignore duplicate tag errors
-          }
-        }
-      });
-      insertTags(tagIds);
-    }
-
-    // Fetch updated recipe with tags
     const recipe = db
       .prepare('SELECT * FROM recipes WHERE id = ?')
       .get(recipeId) as any;
 
-    const tags = db
-      .prepare(`
-        SELECT t.id, t.name, t.color
-        FROM tags t
-        INNER JOIN recipe_tags rt ON t.id = rt.tag_id
-        WHERE rt.recipe_id = ?
-      `)
-      .all(recipeId) as Array<{ id: number; name: string; color?: string }>;
-
     return NextResponse.json({
       ...recipe,
       ingredients: JSON.parse(recipe.ingredients || '[]'),
-      tags,
     });
   } catch (error: any) {
     console.error('Update recipe error:', error);
@@ -171,9 +128,7 @@ export async function DELETE(
       );
     }
 
-    const recipeId = parseInt(params.id);
-
-    // Check if recipe exists and belongs to user
+    const recipeId = parseInt(params.id, 10);
     const existingRecipe = db
       .prepare('SELECT id FROM recipes WHERE id = ? AND user_id = ?')
       .get(recipeId, user.id);
@@ -185,7 +140,6 @@ export async function DELETE(
       );
     }
 
-    // Delete recipe (tags will be deleted automatically due to CASCADE)
     db.prepare('DELETE FROM recipes WHERE id = ? AND user_id = ?').run(recipeId, user.id);
 
     return NextResponse.json({ message: 'Recipe deleted successfully' });

@@ -4,16 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
+import { decodeHtmlEntities, parseInstructionsToSteps } from '@/lib/recipe-display';
 
 interface Ingredient {
   name: string;
   quantity: string;
   unit: string;
-}
-
-interface Tag {
-  id: number;
-  name: string;
 }
 
 interface Recipe {
@@ -24,7 +20,7 @@ interface Recipe {
   instructions: string;
   prep_time: number;
   cook_time: number;
-  tags?: Tag[];
+  source_url?: string;
 }
 
 export default function RecipeDetailPage() {
@@ -40,59 +36,38 @@ export default function RecipeDetailPage() {
     prep_time: '',
     cook_time: '',
     instructions: '',
+    source_url: '',
   });
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [selectedTags, setSelectedTags] = useState<number[]>([]);
-  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
 
   useEffect(() => {
-    if (params.id) {
-      fetchRecipe();
-      fetchTags();
-    }
+    if (params.id) fetchRecipe();
   }, [params.id]);
 
   const fetchRecipe = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/recipes/${params.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const res = await fetch(`/api/recipes/${params.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        throw new Error('Recipe not found');
-      }
+      if (!res.ok) throw new Error('Recipe not found');
 
-      const data = await response.json();
+      const data = await res.json();
       setRecipe(data);
       setFormData({
-        name: data.name,
-        description: data.description || '',
-        prep_time: data.prep_time.toString(),
-        cook_time: data.cook_time.toString(),
-        instructions: data.instructions,
+        name: decodeHtmlEntities(data.name),
+        description: decodeHtmlEntities(data.description || ''),
+        prep_time: String(data.prep_time),
+        cook_time: String(data.cook_time),
+        instructions: decodeHtmlEntities(data.instructions || ''),
+        source_url: data.source_url || '',
       });
       setIngredients(data.ingredients || []);
-      setSelectedTags(data.tags?.map((t: Tag) => t.id) || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load recipe');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchTags = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/tags', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableTags(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch tags:', error);
     }
   };
 
@@ -102,26 +77,25 @@ export default function RecipeDetailPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/recipes/${params.id}`, {
+      const res = await fetch(`/api/recipes/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,
-          prep_time: parseInt(formData.prep_time) || 0,
-          cook_time: parseInt(formData.cook_time) || 0,
+          prep_time: parseInt(formData.prep_time, 10) || 0,
+          cook_time: parseInt(formData.cook_time, 10) || 0,
           ingredients: ingredients.filter((ing) => ing.name.trim() !== ''),
-          tagIds: selectedTags,
+          source_url: formData.source_url || null,
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update recipe');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to update');
       }
-
       await fetchRecipe();
       setIsEditing(false);
     } catch (err: any) {
@@ -130,24 +104,22 @@ export default function RecipeDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this recipe?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this recipe?')) return;
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/recipes/${params.id}`, {
+      const res = await fetch(`/api/recipes/${params.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
+      if (res.ok) {
         router.push('/recipes');
       } else {
-        throw new Error('Failed to delete recipe');
+        throw new Error('Failed to delete');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to delete recipe');
+      setError(err.message || 'Failed to delete');
     }
   };
 
@@ -165,13 +137,16 @@ export default function RecipeDetailPage() {
     setIngredients(updated);
   };
 
+  const formatIngredient = (ing: Ingredient) => {
+    const parts = [ing.quantity, ing.unit, ing.name].filter(Boolean);
+    return decodeHtmlEntities(parts.join(' ').trim());
+  };
+
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <div className="text-gray-500">Loading recipe...</div>
-          </div>
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="text-center py-12 text-sage-500">Loading...</div>
         </div>
       </ProtectedRoute>
     );
@@ -180,12 +155,12 @@ export default function RecipeDetailPage() {
   if (error && !recipe) {
     return (
       <ProtectedRoute>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg">
             {error}
           </div>
-          <Link href="/recipes" className="mt-4 inline-block text-blue-600 hover:text-blue-700">
-            ← Back to Recipes
+          <Link href="/recipes" className="mt-4 inline-block text-terracotta-600 hover:text-terracotta-700">
+            ← Back to recipes
           </Link>
         </div>
       </ProtectedRoute>
@@ -194,181 +169,182 @@ export default function RecipeDetailPage() {
 
   if (!recipe) return null;
 
+  const displayDescription = decodeHtmlEntities(recipe.description || '');
+  const instructionSteps = parseInstructionsToSteps(recipe.instructions);
+
   return (
     <ProtectedRoute>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <Link href="/recipes" className="text-blue-600 hover:text-blue-700">
-            ← Back to Recipes
+          <Link href="/recipes" className="text-terracotta-600 hover:text-terracotta-700 text-sm font-medium">
+            ← Back to recipes
           </Link>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          <div className="mb-6 p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg">
             {error}
           </div>
         )}
 
         {!isEditing ? (
-          <div className="bg-white rounded-lg shadow p-8">
+          <div className="bg-white rounded-lg border border-sage-200 p-6">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{recipe.name}</h1>
-                {recipe.description && (
-                  <p className="text-gray-600">{recipe.description}</p>
+                <h1 className="text-2xl font-semibold text-sage-900 mb-2">{decodeHtmlEntities(recipe.name)}</h1>
+                {displayDescription && (
+                  <p className="text-sage-600">{displayDescription}</p>
                 )}
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 transition text-sm font-medium"
                 >
                   Edit
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                  className="px-4 py-2 border border-coral-300 text-coral-700 rounded-lg hover:bg-coral-50 transition text-sm font-medium"
                 >
                   Delete
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="text-sm">
-                <span className="text-gray-500">Prep Time:</span>{' '}
-                <span className="font-medium">{recipe.prep_time} min</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Cook Time:</span>{' '}
-                <span className="font-medium">{recipe.cook_time} min</span>
-              </div>
-              <div className="text-sm">
-                <span className="text-gray-500">Total Time:</span>{' '}
-                <span className="font-medium">{recipe.prep_time + recipe.cook_time} min</span>
-              </div>
-            </div>
-
-            {recipe.tags && recipe.tags.length > 0 && (
+            {recipe.source_url && (
               <div className="mb-6">
-                <div className="flex flex-wrap gap-2">
-                  {recipe.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-                    >
-                      {tag.name}
-                    </span>
-                  ))}
-                </div>
+                <a
+                  href={recipe.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-terracotta-600 hover:text-terracotta-700 break-all"
+                >
+                  View original recipe →
+                </a>
               </div>
             )}
 
+            <div className="flex gap-6 mb-6 text-sm text-sage-600">
+              <span>Prep: {recipe.prep_time} min</span>
+              <span>Cook: {recipe.cook_time} min</span>
+              <span>Total: {recipe.prep_time + recipe.cook_time} min</span>
+            </div>
+
             <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Ingredients</h2>
+              <h2 className="text-lg font-medium text-sage-900 mb-3">Ingredients</h2>
               <ul className="space-y-2">
-                {recipe.ingredients.map((ingredient, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className="text-gray-700">
-                      {ingredient.quantity} {ingredient.unit} {ingredient.name}
-                    </span>
+                {(recipe.ingredients || []).map((ing, i) => (
+                  <li key={i} className="text-sage-700">
+                    {formatIngredient(typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing)}
                   </li>
                 ))}
               </ul>
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Instructions</h2>
-              <div className="whitespace-pre-wrap text-gray-700">{recipe.instructions}</div>
+              <h2 className="text-lg font-medium text-sage-900 mb-3">Instructions</h2>
+              {instructionSteps.length > 0 ? (
+                <ol className="list-decimal list-inside space-y-3 text-sage-700">
+                  {instructionSteps.map((step, i) => (
+                    <li key={i} className="pl-2">
+                      {decodeHtmlEntities(step)}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <div className="whitespace-pre-wrap text-sage-700">{decodeHtmlEntities(recipe.instructions)}</div>
+              )}
             </div>
           </div>
         ) : (
-          <form onSubmit={handleUpdate} className="bg-white rounded-lg shadow p-8 space-y-6">
+          <form onSubmit={handleUpdate} className="bg-white rounded-lg border border-sage-200 p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Recipe Name *
-              </label>
+              <label className="block text-sm font-medium text-sage-700 mb-2">Recipe name *</label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-sage-700 mb-2">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-sage-700 mb-2">Source URL</label>
+              <input
+                type="url"
+                value={formData.source_url}
+                onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
+                placeholder="https://..."
+                className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prep Time (minutes)
-                </label>
+                <label className="block text-sm font-medium text-sage-700 mb-2">Prep time (min)</label>
                 <input
                   type="number"
-                  min="0"
+                  min={0}
                   value={formData.prep_time}
                   onChange={(e) => setFormData({ ...formData, prep_time: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cook Time (minutes)
-                </label>
+                <label className="block text-sm font-medium text-sage-700 mb-2">Cook time (min)</label>
                 <input
                   type="number"
-                  min="0"
+                  min={0}
                   value={formData.cook_time}
                   onChange={(e) => setFormData({ ...formData, cook_time: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ingredients
-              </label>
+              <label className="block text-sm font-medium text-sage-700 mb-2">Ingredients</label>
               <div className="space-y-3">
-                {ingredients.map((ingredient, index) => (
-                  <div key={index} className="flex gap-2">
+                {ingredients.map((ing, i) => (
+                  <div key={i} className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Ingredient name"
-                      value={ingredient.name}
-                      onChange={(e) => updateIngredient(index, 'name', e.target.value)}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Name"
+                      value={ing.name}
+                      onChange={(e) => updateIngredient(i, 'name', e.target.value)}
+                      className="flex-1 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
                     />
                     <input
                       type="text"
-                      placeholder="Quantity"
-                      value={ingredient.quantity}
-                      onChange={(e) => updateIngredient(index, 'quantity', e.target.value)}
-                      className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Qty"
+                      value={ing.quantity}
+                      onChange={(e) => updateIngredient(i, 'quantity', e.target.value)}
+                      className="w-20 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
                     />
                     <input
                       type="text"
                       placeholder="Unit"
-                      value={ingredient.unit}
-                      onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
-                      className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={ing.unit}
+                      onChange={(e) => updateIngredient(i, 'unit', e.target.value)}
+                      className="w-24 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
                     />
                     {ingredients.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeIngredient(index)}
-                        className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        onClick={() => removeIngredient(i)}
+                        className="px-3 py-2 text-coral-600 hover:bg-coral-50 rounded-lg text-sm"
                       >
                         Remove
                       </button>
@@ -378,60 +354,30 @@ export default function RecipeDetailPage() {
                 <button
                   type="button"
                   onClick={addIngredient}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-terracotta-600 hover:text-terracotta-700 text-sm font-medium"
                 >
-                  + Add Ingredient
+                  + Add ingredient
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Instructions *
-              </label>
+              <label className="block text-sm font-medium text-sage-700 mb-2">Instructions *</label>
               <textarea
                 required
                 value={formData.instructions}
                 onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
                 rows={8}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tags
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {availableTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() =>
-                      setSelectedTags((prev) =>
-                        prev.includes(tag.id)
-                          ? prev.filter((id) => id !== tag.id)
-                          : [...prev, tag.id]
-                      )
-                    }
-                    className={`px-3 py-1 rounded-full text-sm transition ${
-                      selectedTags.includes(tag.id)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
+            <div className="flex gap-4">
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+                className="px-6 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium"
               >
-                Save Changes
+                Save
               </button>
               <button
                 type="button"
@@ -439,7 +385,7 @@ export default function RecipeDetailPage() {
                   setIsEditing(false);
                   fetchRecipe();
                 }}
-                className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition"
+                className="px-6 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 font-medium"
               >
                 Cancel
               </button>

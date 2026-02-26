@@ -21,10 +21,7 @@ export default function Navigation() {
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/recipes', label: 'Recipes' },
-    { href: '/meal-plan', label: 'Meal Plan' },
-    { href: '/ingredient-list', label: 'Shopping List' },
-    { href: '/tags', label: 'Tags' },
-    { href: '/insights', label: 'Insights' },
+    { href: '/profile', label: 'Profile' },
   ];
 
   return (
