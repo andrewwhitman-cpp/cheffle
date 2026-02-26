@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
 import { decodeHtmlEntities, parseInstructionsToSteps } from '@/lib/recipe-display';
+import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 
 interface Ingredient {
   name: string;
@@ -326,19 +327,64 @@ export default function RecipeDetailPage() {
             </div>
 
             <div className="mb-6">
-              <h2 className="text-lg font-medium text-sage-900 mb-3">Ingredients</h2>
-              <ul className="space-y-2">
-                {(recipe.ingredients || []).map((ing, i) => (
-                  <li key={i} className="text-sage-700">
-                    {formatIngredient(typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing)}
-                  </li>
-                ))}
-              </ul>
+              <h2 className="text-lg font-medium text-sage-900 mb-3">
+                Ingredients
+                {pendingRecipe && (
+                  <span className="ml-2 text-xs font-normal text-sage-500">(proposed changes)</span>
+                )}
+              </h2>
+              {pendingRecipe ? (
+                <ul className="space-y-1.5">
+                  {getIngredientDiff(recipe.ingredients || [], pendingRecipe.ingredients).map((item, i) => (
+                    <li
+                      key={i}
+                      className={
+                        item.type === 'removed'
+                          ? 'text-red-600 line-through'
+                          : item.type === 'added'
+                          ? 'text-green-700 bg-green-50 py-0.5 px-1 rounded'
+                          : 'text-sage-700'
+                      }
+                    >
+                      {item.text}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="space-y-2">
+                  {(recipe.ingredients || []).map((ing, i) => (
+                    <li key={i} className="text-sage-700">
+                      {formatIngredient(typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing)}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div>
-              <h2 className="text-lg font-medium text-sage-900 mb-3">Instructions</h2>
-              {instructionSteps.length > 0 ? (
+              <h2 className="text-lg font-medium text-sage-900 mb-3">
+                Instructions
+                {pendingRecipe && (
+                  <span className="ml-2 text-xs font-normal text-sage-500">(proposed changes)</span>
+                )}
+              </h2>
+              {pendingRecipe ? (
+                <div className="text-sage-700 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                  {getTextDiff(recipe.instructions || '', pendingRecipe.instructions).map((part, i) =>
+                    part.added ? (
+                      <span key={i} className="bg-green-100 text-green-800">
+                        {part.value}
+                      </span>
+                    ) : part.removed ? (
+                      <span key={i} className="bg-red-100 text-red-700 line-through">
+                        {part.value}
+                      </span>
+                    ) : (
+                      <span key={i}>{part.value}</span>
+                    )
+                  )}
+                </div>
+              ) : instructionSteps.length > 0 ? (
                 <ol className="list-decimal list-inside space-y-3 text-sage-700">
                   {instructionSteps.map((step, i) => (
                     <li key={i} className="pl-2">
@@ -380,6 +426,7 @@ export default function RecipeDetailPage() {
             {pendingRecipe && (
               <div className="mb-4 p-4 bg-cream-100 border border-cream-300 rounded-lg shrink-0">
                 <p className="text-sm font-medium text-sage-800 mb-2">Changes ready to apply</p>
+                <p className="text-xs text-sage-600 mb-3">Preview the diff in the recipe column on the left.</p>
                 <div className="flex gap-2">
                   <button
                     onClick={handleApplyChanges}
