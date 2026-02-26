@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -58,6 +59,7 @@ export default function ProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setSaving(true);
 
     try {
@@ -85,6 +87,9 @@ export default function ProfilePage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || 'Failed to save');
       }
+
+      setSuccess('Profile saved successfully.');
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err: any) {
       setError(err.message || 'Failed to save profile');
     } finally {
@@ -106,12 +111,6 @@ export default function ProfilePage() {
     <ProtectedRoute>
       <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-semibold text-sage-900 mb-6">Profile</h1>
-
-        {error && (
-          <div className="mb-6 p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -339,13 +338,21 @@ export default function ProfilePage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            {error && (
+              <span className="text-coral-700 text-sm">{error}</span>
+            )}
+            {success && (
+              <span className="text-sage-700 text-sm">{success}</span>
+            )}
+          </div>
         </form>
       </div>
     </ProtectedRoute>
