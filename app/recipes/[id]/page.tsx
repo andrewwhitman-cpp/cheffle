@@ -23,6 +23,20 @@ interface Recipe {
   source_url?: string;
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface ModifiedRecipe {
+  name: string;
+  description: string;
+  ingredients: Ingredient[];
+  instructions: string;
+  prep_time: number;
+  cook_time: number;
+}
+
 export default function RecipeDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -39,6 +53,10 @@ export default function RecipeDetailPage() {
     source_url: '',
   });
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [pendingRecipe, setPendingRecipe] = useState<ModifiedRecipe | null>(null);
 
   useEffect(() => {
     if (params.id) fetchRecipe();
@@ -142,6 +160,81 @@ export default function RecipeDetailPage() {
     return decodeHtmlEntities(parts.join(' ').trim());
   };
 
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || chatLoading || !recipe) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    setChatMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setChatLoading(true);
+    setPendingRecipe(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/recipes/${params.id}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          history: chatMessages,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to get response');
+
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
+      if (data.modifiedRecipe) {
+        setPendingRecipe(data.modifiedRecipe);
+      }
+    } catch (err: any) {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `Error: ${err.message || 'Something went wrong'}` },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleApplyChanges = async () => {
+    if (!pendingRecipe || !recipe) return;
+
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/recipes/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: pendingRecipe.name,
+          description: pendingRecipe.description,
+          ingredients: pendingRecipe.ingredients,
+          instructions: pendingRecipe.instructions,
+          prep_time: pendingRecipe.prep_time,
+          cook_time: pendingRecipe.cook_time,
+          source_url: recipe.source_url,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to apply');
+      }
+      setPendingRecipe(null);
+      await fetchRecipe();
+    } catch (err: any) {
+      setError(err.message || 'Failed to apply changes');
+    }
+  };
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -174,7 +267,7 @@ export default function RecipeDetailPage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <Link href="/recipes" className="text-terracotta-600 hover:text-terracotta-700 text-sm font-medium">
             ← Back to recipes
@@ -188,6 +281,7 @@ export default function RecipeDetailPage() {
         )}
 
         {!isEditing ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white rounded-lg border border-sage-200 p-6">
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -257,6 +351,71 @@ export default function RecipeDetailPage() {
               )}
             </div>
           </div>
+
+          {/* AI Chat - right column, sticky so it stays visible when scrolling */}
+          <div className="bg-white rounded-lg border border-sage-200 p-6 flex flex-col lg:h-[calc(100vh-8rem)] lg:sticky lg:top-4">
+            <h2 className="text-lg font-medium text-sage-900 mb-3">Modify with AI</h2>
+            <p className="text-sm text-sage-600 mb-4">
+              Ask the AI to change this recipe. Try &quot;add rice&quot;, &quot;double the recipe&quot;, or &quot;make it vegetarian&quot;.
+            </p>
+
+            <div className="space-y-3 mb-4 flex-1 min-h-0 overflow-y-auto">
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`p-3 rounded-lg ${
+                    msg.role === 'user'
+                      ? 'bg-terracotta-50 text-sage-900 ml-4'
+                      : 'bg-sage-100 text-sage-800 mr-4'
+                  }`}
+                >
+                  <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="p-3 rounded-lg bg-sage-100 text-sage-600 text-sm">Thinking...</div>
+              )}
+            </div>
+
+            {pendingRecipe && (
+              <div className="mb-4 p-4 bg-cream-100 border border-cream-300 rounded-lg shrink-0">
+                <p className="text-sm font-medium text-sage-800 mb-2">Changes ready to apply</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleApplyChanges}
+                    className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 text-sm font-medium"
+                  >
+                    Apply changes
+                  </button>
+                  <button
+                    onClick={() => setPendingRecipe(null)}
+                    className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 text-sm font-medium"
+                  >
+                    Discard
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleChatSubmit} className="flex gap-2 shrink-0">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="e.g. add rice, remove garlic..."
+                className="flex-1 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-sage-900 placeholder:text-sage-400"
+                disabled={chatLoading}
+              />
+              <button
+                type="submit"
+                disabled={chatLoading || !chatInput.trim()}
+                className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        </div>
         ) : (
           <form onSubmit={handleUpdate} className="bg-white rounded-lg border border-sage-200 p-6 space-y-6">
             <div>
