@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
+import { scaleIngredient } from '@/lib/ingredient-parser';
 
 interface Ingredient {
   name: string;
@@ -58,6 +59,26 @@ export default function RecipeDetailPage() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [pendingRecipe, setPendingRecipe] = useState<ModifiedRecipe | null>(null);
+  const [servingScale, setServingScale] = useState(1);
+  const [scaleInput, setScaleInput] = useState('1');
+
+  const parseScaleInput = (value: string): number | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = parseFloat(trimmed);
+    if (!Number.isNaN(parsed)) return parsed;
+    const frac = trimmed.match(/^(\d+)\/(\d+)$/);
+    if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
+    return null;
+  };
+
+  const handleScaleChange = (value: string) => {
+    setScaleInput(value);
+    const parsed = parseScaleInput(value);
+    if (parsed !== null && parsed >= 0.1 && parsed <= 20) {
+      setServingScale(parsed);
+    }
+  };
 
   useEffect(() => {
     if (params.id) fetchRecipe();
@@ -322,22 +343,45 @@ export default function RecipeDetailPage() {
               </div>
             )}
 
-            <div className="flex gap-6 mb-6 text-sm text-sage-600">
+            <div className="flex flex-wrap gap-6 mb-6 text-sm text-sage-600">
               <span>Prep: {recipe.prep_time} min</span>
               <span>Cook: {recipe.cook_time} min</span>
               <span>Total: {recipe.prep_time + recipe.cook_time} min</span>
             </div>
 
             <div className="mb-6">
-              <h2 className="text-lg font-medium text-sage-900 mb-3">
-                Ingredients
-                {pendingRecipe && (
-                  <span className="ml-2 text-xs font-normal text-sage-500">(proposed changes)</span>
-                )}
-              </h2>
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <h2 className="text-lg font-medium text-sage-900">
+                  Ingredients
+                  {pendingRecipe && (
+                    <span className="ml-2 text-xs font-normal text-sage-500">(proposed changes)</span>
+                  )}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-sage-500">Scale:</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={scaleInput}
+                    onChange={(e) => handleScaleChange(e.target.value)}
+                    onBlur={() => setScaleInput(String(servingScale))}
+                    placeholder="1"
+                    className="w-14 px-2 py-0.5 text-sm border border-sage-300 rounded focus:outline-none focus:ring-1 focus:ring-terracotta-500 focus:border-terracotta-500"
+                  />
+                  <span className="text-xs text-sage-500">×</span>
+                </div>
+              </div>
               {pendingRecipe ? (
                 <ul className="space-y-1.5">
-                  {getIngredientDiff(recipe.ingredients || [], pendingRecipe.ingredients).map((item, i) => (
+                  {getIngredientDiff(
+                    (recipe.ingredients || []).map((ing) =>
+                      scaleIngredient(
+                        typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing,
+                        servingScale
+                      )
+                    ),
+                    (pendingRecipe.ingredients || []).map((ing) => scaleIngredient(ing, servingScale))
+                  ).map((item, i) => (
                     <li
                       key={i}
                       className={
@@ -354,11 +398,17 @@ export default function RecipeDetailPage() {
                 </ul>
               ) : (
                 <ul className="space-y-2">
-                  {(recipe.ingredients || []).map((ing, i) => (
-                    <li key={i} className="text-sage-700">
-                      {formatIngredient(typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing)}
-                    </li>
-                  ))}
+                  {(recipe.ingredients || []).map((ing, i) => {
+                    const scaled = scaleIngredient(
+                      typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing,
+                      servingScale
+                    );
+                    return (
+                      <li key={i} className="text-sage-700">
+                        {formatIngredient(scaled)}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
