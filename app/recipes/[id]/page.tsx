@@ -452,12 +452,17 @@ export default function RecipeDetailPage() {
 
           {/* AI Chat - right column, sticky so it stays visible when scrolling */}
           <div className="bg-white rounded-lg border border-sage-200 p-6 flex flex-col lg:h-[calc(100vh-8rem)] lg:sticky lg:top-4">
-            <h2 className="text-lg font-medium text-sage-900 mb-3">Modify with AI</h2>
+            <h2 className="text-lg font-medium text-sage-900 mb-1">Talk with Cheffle</h2>
             <p className="text-sm text-sage-600 mb-4">
-              Ask the AI to change this recipe. Try &quot;add rice&quot;, &quot;double the recipe&quot;, or &quot;make it vegetarian&quot;.
+              I&apos;m here to help! Ask me to tweak this recipe—add rice, make it vegetarian, double it, or anything else you have in mind.
             </p>
 
             <div className="space-y-3 mb-4 flex-1 min-h-0 overflow-y-auto">
+              {chatMessages.length === 0 && !chatLoading && (
+                <p className="text-sm text-sage-500 italic py-4">
+                  What would you like to change? Just ask!
+                </p>
+              )}
               {chatMessages.map((msg, i) => (
                 <div
                   key={i}
@@ -471,26 +476,28 @@ export default function RecipeDetailPage() {
                 </div>
               ))}
               {chatLoading && (
-                <div className="p-3 rounded-lg bg-sage-100 text-sage-600 text-sm">Thinking...</div>
+                <div className="p-3 rounded-lg bg-sage-100 text-sage-600 text-sm">
+                  <span className="animate-pulse">Cheffle is thinking...</span>
+                </div>
               )}
             </div>
 
             {pendingRecipe && (
               <div className="mb-4 p-4 bg-cream-100 border border-cream-300 rounded-lg shrink-0">
-                <p className="text-sm font-medium text-sage-800 mb-2">Changes ready to apply</p>
-                <p className="text-xs text-sage-600 mb-3">Preview the diff in the recipe column on the left.</p>
+                <p className="text-sm font-medium text-sage-800 mb-2">I&apos;ve got some changes for you!</p>
+                <p className="text-xs text-sage-600 mb-3">Take a look at the recipe on the left to see what I suggested.</p>
                 <div className="flex gap-2">
                   <button
                     onClick={handleApplyChanges}
                     className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 text-sm font-medium"
                   >
-                    Apply changes
+                    Use these changes
                   </button>
                   <button
                     onClick={() => setPendingRecipe(null)}
                     className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 text-sm font-medium"
                   >
-                    Discard
+                    Start over
                   </button>
                 </div>
               </div>
@@ -501,7 +508,7 @@ export default function RecipeDetailPage() {
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="e.g. add rice, remove garlic..."
+                placeholder="What would you like to change?"
                 className="flex-1 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-sage-900 placeholder:text-sage-400"
                 disabled={chatLoading}
               />
