@@ -1,115 +1,111 @@
-# Cheffle - Meal Planning Web Application
+# Cheffle - AI Recipe App
 
-A full-stack meal planning application built with Next.js, TypeScript, and SQLite.
+An AI-native recipe app built with Next.js. Add recipes from any URL, customize them with AI, and follow step-by-step guided cooking.
 
 ## Features
 
-- **Recipe Management**: Create, edit, and delete recipes with ingredients, instructions, and timing
-- **Tagging System**: Organize recipes with tags (protein types, difficulty, cooking methods, cuisine types)
-- **Meal Plan Calendar**: Plan meals by assigning recipes to specific dates
-- **Shopping List**: Automatically generate and edit ingredient lists from meal plans
-- **User Authentication**: Secure JWT-based authentication system
+- **Recipe import**: Paste a URL to parse and save recipes (JSON-LD + OpenAI fallback)
+- **AI modifications**: Chat with Cheffle to adjust recipes (add rice, make vegetarian, double it, etc.)
+- **Skill-level adjustments**: Recipes adapt to your experience (New to Cooking, Comfortable, Experienced)
+- **Kitchen context**: Profile your equipment and appliances so recipes use what you have
+- **Guided cooking**: Step-by-step view with one instruction at a time, keyboard navigation
+- **Ingredient scaling**: Scale servings with accurate quantity adjustments
+- **User accounts**: JWT auth, profile settings, password change
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router) with React and TypeScript
-- **Styling**: Tailwind CSS
+- **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
-- **Database**: Turso (libSQL/SQLite-compatible) for Vercel deployment; local file for dev
-- **Authentication**: JWT tokens
+- **Database**: Turso (libSQL) for production; local SQLite file for dev
+- **AI**: OpenAI GPT-4 for recipe parsing and modifications
+- **Auth**: JWT tokens, bcrypt password hashing
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+
+- npm
 
 ### Installation
 
-1. Install dependencies:
+1. Clone and install:
+
 ```bash
+git clone <repo-url>
+cd cheffle
 npm install
 ```
 
-2. Set up the database (you'll need to create the API routes for this):
+2. Copy `.env.example` to `.env.local`:
+
 ```bash
-# The database will be created automatically when you run the API routes
+cp .env.example .env.local
 ```
 
-3. Run the development server:
+3. Set environment variables in `.env.local`:
+
+- **JWT_SECRET** (required): Generate with `openssl rand -base64 32`
+- **OPENAI_API_KEY** (required): From [OpenAI](https://platform.openai.com)
+- **TURSO_DATABASE_URL** and **TURSO_AUTH_TOKEN** (optional for dev): Omit to use local `database/cheffle.db`
+
+4. Run the dev server:
+
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+5. Open [http://localhost:3000](http://localhost:3000)
+
+## Deployment (Vercel)
+
+1. Push your repo to GitHub and import the project in [Vercel](https://vercel.com).
+
+2. Add environment variables in Vercel (Settings → Environment Variables):
+
+   | Variable             | Required | Description                          |
+   | -------------------- | -------- | ------------------------------------ |
+   | JWT_SECRET           | Yes      | Secure random string (e.g. `openssl rand -base64 32`) |
+   | OPENAI_API_KEY       | Yes      | OpenAI API key                       |
+   | TURSO_DATABASE_URL   | Yes      | `libsql://your-db.turso.io`         |
+   | TURSO_AUTH_TOKEN    | Yes      | Turso auth token                     |
+
+3. Deploy. Vercel will run `npm run build` and deploy.
+
+### Turso setup
+
+1. Create an account at [turso.tech](https://turso.tech)
+2. Create a database in the Turso dashboard
+3. Copy the database URL and create an auth token
+4. Run migrations: the app creates tables on first request, or you can apply the schema from `lib/db.ts` manually
 
 ## Project Structure
 
 ```
 cheffle/
-├── app/                    # Next.js App Router
-│   ├── api/                # API route handlers (to be implemented)
-│   ├── login/              # Login page
-│   ├── register/           # Registration page
-│   ├── dashboard/          # Dashboard page
-│   ├── recipes/            # Recipe pages
-│   ├── meal-plan/         # Meal plan calendar
-│   ├── ingredient-list/   # Shopping list
-│   ├── tags/               # Tag management
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx            # Home page (redirects to dashboard)
-├── components/             # React components
-│   ├── Calendar.tsx        # Calendar component
-│   ├── Navigation.tsx      # Navigation bar
-│   ├── ProtectedRoute.tsx  # Route protection
-│   └── RecipeCard.tsx      # Recipe card component
-├── contexts/               # React contexts
-│   └── AuthContext.tsx     # Authentication context
-└── lib/                    # Utilities
-    └── auth.ts             # Auth utilities
+├── app/
+│   ├── api/              # API routes (auth, recipes, profile)
+│   ├── dashboard/        # Dashboard with URL import
+│   ├── login/            # Login page
+│   ├── register/         # Registration page
+│   ├── recipes/          # Recipe list, detail, cook view
+│   ├── profile/          # Profile settings (sidebar)
+│   ├── layout.tsx
+│   ├── page.tsx          # Landing page
+│   ├── not-found.tsx     # 404 page
+│   └── error.tsx         # Error boundary
+├── components/
+├── contexts/             # AuthContext
+├── hooks/                # useRecipeChat
+└── lib/                  # db, auth, recipe-parser, etc.
 ```
 
-## Frontend Pages
+## Scripts
 
-### Authentication
-- **Login** (`/login`): User login page
-- **Register** (`/register`): User registration page
-
-### Main Pages
-- **Dashboard** (`/dashboard`): Overview of recent recipes and upcoming meals
-- **Recipes** (`/recipes`): List all recipes with search and tag filtering
-- **Recipe Detail** (`/recipes/[id]`): View and edit individual recipes
-- **New Recipe** (`/recipes/new`): Create a new recipe
-- **Meal Plan** (`/meal-plan`): Calendar view for planning meals
-- **Shopping List** (`/ingredient-list`): Generate and edit ingredient lists
-- **Tags** (`/tags`): Manage recipe tags
-
-## Next Steps
-
-To make this application fully functional, you'll need to implement:
-
-1. **API Routes** (`app/api/`):
-   - Authentication endpoints (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`)
-   - Recipe CRUD endpoints (`/api/recipes`)
-   - Tag management endpoints (`/api/tags`)
-   - Meal plan endpoints (`/api/meal-plans`)
-   - Ingredient list endpoints (`/api/ingredient-lists`)
-
-2. **Database Setup** (`lib/db.ts`):
-   - SQLite database connection
-   - Database schema creation
-   - Database models and queries
-
-3. **Authentication** (`lib/auth.ts`):
-   - JWT token generation and verification
-   - Password hashing with bcrypt
-
-## Development
-
-- Run development server: `npm run dev`
-- Build for production: `npm run build`
-- Start production server: `npm start`
-- Lint code: `npm run lint`
+- `npm run dev` - Development server
+- `npm run build` - Production build
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
 
 ## License
 

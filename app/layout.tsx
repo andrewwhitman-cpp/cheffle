@@ -6,9 +6,27 @@ import Navigation from '@/components/Navigation';
 
 const inter = Inter({ subsets: ['latin'] });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cheffle.vercel.app';
+
 export const metadata: Metadata = {
-  title: 'Cheffle - AI Recipe App',
-  description: 'Add recipes from any URL. Your AI-native recipe collection.',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Cheffle - AI Recipe App',
+    template: '%s | Cheffle',
+  },
+  description: 'Add recipes from any URL. Your AI-native recipe collection. Chat with AI to customize recipes, follow guided cooking, and scale ingredients.',
+  openGraph: {
+    title: 'Cheffle - AI Recipe App',
+    description: 'Add recipes from any URL. Your AI-native recipe collection. Chat with AI to customize recipes, follow guided cooking, and scale ingredients.',
+    url: '/',
+    siteName: 'Cheffle',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Cheffle - AI Recipe App',
+    description: 'Add recipes from any URL. Your AI-native recipe collection. Chat with AI to customize recipes, follow guided cooking, and scale ingredients.',
+  },
 };
 
 export default function RootLayout({
