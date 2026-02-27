@@ -107,6 +107,46 @@ async function runMigrations() {
   await client.execute(
     `CREATE INDEX IF NOT EXISTS idx_inventory_user_name ON inventory(user_id, name)`
   );
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS meal_plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      plan_date TEXT NOT NULL,
+      meal_type TEXT NOT NULL,
+      recipe_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL,
+      UNIQUE(user_id, plan_date, meal_type)
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS shopping_lists (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS shopping_list_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      shopping_list_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      quantity REAL NOT NULL DEFAULT 0,
+      unit TEXT NOT NULL DEFAULT '',
+      from_recipe_id INTEGER,
+      purchased INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (shopping_list_id) REFERENCES shopping_lists(id) ON DELETE CASCADE,
+      FOREIGN KEY (from_recipe_id) REFERENCES recipes(id) ON DELETE SET NULL
+    )
+  `);
 }
 
 let migrationsRun = false;
