@@ -26,6 +26,7 @@ interface RecipeForChat {
   instructions: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   skill_level_adjusted?: string | null;
 }
 
@@ -42,7 +43,8 @@ When the user asks for changes (e.g. "add rice", "remove garlic", "double the re
   "ingredients": [{"name": "ingredient name", "quantity": "amount", "unit": "unit"}],
   "instructions": "Numbered steps. 1. First step.\\n\\n2. Second step.",
   "prep_time": 0,
-  "cook_time": 0
+  "cook_time": 0,
+  "servings": 4
 }
 \`\`\`
 
@@ -50,6 +52,7 @@ Rules for modifications:
 - ingredients: array of objects with name, quantity, unit. Use "2 cups rice" not "rice" as name.
 - instructions: numbered steps with double newlines between them. Add appropriate cooking steps (e.g. for rice: "Start the rice cooker first - rice typically takes 45-60 minutes. Add rice and water according to package directions.").
 - prep_time and cook_time: integers in minutes.
+- servings: integer, number of servings the recipe makes. Preserve or update when scaling (e.g. "double" = 2x servings).
 
 If the user is just asking a question (not requesting changes), respond in a friendly, helpful way but do NOT include a recipe block. Keep your tone warm and encouraging.`;
 
@@ -104,6 +107,7 @@ export async function POST(
       instructions: recipe.instructions || '',
       prep_time: recipe.prep_time || 0,
       cook_time: recipe.cook_time || 0,
+      servings: recipe.servings ?? null,
     };
 
     const ingredientsStr = ingredients
@@ -119,7 +123,7 @@ ${ingredientsStr}
 Instructions:
 ${recipeContext.instructions}
 
-Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
+Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min${recipeContext.servings ? `, Serves: ${recipeContext.servings}` : ''}`;
 
     const profile = db.prepare('SELECT skill_level, kitchen_context FROM users WHERE id = ?').get(user.id) as {
       skill_level: string | null;
@@ -184,6 +188,7 @@ Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
           instructions?: string;
           prep_time?: number;
           cook_time?: number;
+          servings?: number;
         };
 
         const ings = parsed.ingredients || [];
@@ -197,6 +202,7 @@ Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min`;
           instructions: normalizeInstructions(rawInstructions) || rawInstructions,
           prep_time: parsed.prep_time ?? recipeContext.prep_time,
           cook_time: parsed.cook_time ?? recipeContext.cook_time,
+          servings: parsed.servings ?? recipeContext.servings ?? null,
           skill_level_adjusted: skillLevel || recipe.skill_level_adjusted || null,
         };
       } catch {

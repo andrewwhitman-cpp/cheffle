@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
+import { parseServingsToNumber } from '@/lib/servings-utils';
 
 export async function GET(
   request: NextRequest,
@@ -70,7 +71,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted } = body;
+    const { name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted, servings } = body;
 
     if (!name || !instructions) {
       return NextResponse.json(
@@ -85,10 +86,12 @@ export async function PUT(
         ? String(skill_level_adjusted)
         : undefined;
 
+    const servingsNum = parseServingsToNumber(servings);
+
     db.prepare(`
       UPDATE recipes 
       SET name = ?, description = ?, ingredients = ?, instructions = ?, 
-          prep_time = ?, cook_time = ?, source_url = ?, 
+          prep_time = ?, cook_time = ?, servings = ?, source_url = ?, 
           skill_level_adjusted = COALESCE(?, skill_level_adjusted),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ? AND user_id = ?
@@ -99,6 +102,7 @@ export async function PUT(
       instructions,
       prep_time || 0,
       cook_time || 0,
+      servingsNum ?? null,
       source_url ?? null,
       skillLevelAdjusted ?? null,
       recipeId,

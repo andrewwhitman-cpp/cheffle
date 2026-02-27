@@ -8,6 +8,7 @@ import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } f
 import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 import { scaleIngredient } from '@/lib/ingredient-parser';
 import { SKILL_LEVELS, getSkillLevelLabel, getSkillLevelValue } from '@/lib/skill-levels';
+import { scaleServingsDisplay } from '@/lib/servings-utils';
 import { useRecipeChat } from '@/hooks/useRecipeChat';
 
 interface Ingredient {
@@ -24,6 +25,7 @@ interface Recipe {
   instructions: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
 }
@@ -35,6 +37,7 @@ interface ModifiedRecipe {
   instructions: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   skill_level_adjusted?: string | null;
 }
 
@@ -50,6 +53,7 @@ export default function RecipeDetailPage() {
     description: '',
     prep_time: '',
     cook_time: '',
+    servings: '',
     instructions: '',
     source_url: '',
   });
@@ -108,6 +112,7 @@ export default function RecipeDetailPage() {
         description: decodeHtmlEntities(data.description || ''),
         prep_time: String(data.prep_time),
         cook_time: String(data.cook_time),
+        servings: data.servings != null ? String(data.servings) : '',
         instructions: normalizeInstructions(decodedInstructions) || decodedInstructions,
         source_url: data.source_url || '',
       });
@@ -136,6 +141,7 @@ export default function RecipeDetailPage() {
           instructions: normalizeInstructions(formData.instructions) || formData.instructions,
           prep_time: parseInt(formData.prep_time, 10) || 0,
           cook_time: parseInt(formData.cook_time, 10) || 0,
+          servings: formData.servings ? parseInt(formData.servings, 10) || null : null,
           ingredients: ingredients.filter((ing) => ing.name.trim() !== ''),
           source_url: formData.source_url || null,
         }),
@@ -263,6 +269,7 @@ export default function RecipeDetailPage() {
         prep_time: String(data.prep_time),
         cook_time: String(data.cook_time),
         instructions: data.instructions || '',
+        servings: data.servings != null ? String(data.servings) : '',
       }));
       setIngredients(data.ingredients || []);
     } catch (err: any) {
@@ -291,6 +298,7 @@ export default function RecipeDetailPage() {
           instructions: normalizeInstructions(pendingRecipe.instructions) || pendingRecipe.instructions,
           prep_time: pendingRecipe.prep_time,
           cook_time: pendingRecipe.cook_time,
+          servings: pendingRecipe.servings ?? recipe.servings ?? null,
           source_url: recipe.source_url,
           skill_level_adjusted: pendingRecipe.skill_level_adjusted ?? recipe.skill_level_adjusted ?? null,
         }),
@@ -421,6 +429,9 @@ export default function RecipeDetailPage() {
               <span>Prep: {recipe.prep_time} min</span>
               <span>Cook: {recipe.cook_time} min</span>
               <span>Total: {recipe.prep_time + recipe.cook_time} min</span>
+              {scaleServingsDisplay(recipe.servings ?? null, servingScale) != null && (
+                <span>Serves {scaleServingsDisplay(recipe.servings ?? null, servingScale)}</span>
+              )}
             </div>
 
             <div className="mb-6">
@@ -648,6 +659,17 @@ export default function RecipeDetailPage() {
                   min={0}
                   value={formData.cook_time}
                   onChange={(e) => setFormData({ ...formData, cook_time: e.target.value })}
+                  className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-sage-700 mb-2">Servings</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={formData.servings}
+                  onChange={(e) => setFormData({ ...formData, servings: e.target.value })}
+                  placeholder="e.g. 4"
                   className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500"
                 />
               </div>

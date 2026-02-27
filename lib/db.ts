@@ -79,6 +79,11 @@ export function initDatabase() {
   } catch {
     // Column already exists
   }
+  try {
+    db.exec(`ALTER TABLE recipes ADD COLUMN servings INTEGER`);
+  } catch {
+    // Column already exists
+  }
 
   // Drop deprecated tables (ignore errors if they don't exist)
   db.exec(`DROP TABLE IF EXISTS recipe_tags`);

@@ -11,6 +11,7 @@ interface Recipe {
   description: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
 }
@@ -22,6 +23,7 @@ interface ParsedRecipe {
   instructions: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
 }
@@ -104,6 +106,7 @@ export default function DashboardPage() {
           instructions: preview.instructions,
           prep_time: preview.prep_time,
           cook_time: preview.cook_time,
+          servings: preview.servings ?? null,
           source_url: preview.source_url,
           skill_level_adjusted: preview.skill_level_adjusted ?? null,
         }),
@@ -173,6 +176,9 @@ export default function DashboardPage() {
               {preview.description && (
                 <p className="text-sm text-sage-600 mb-4 line-clamp-2">{preview.description}</p>
               )}
+              {preview.servings != null && preview.servings > 0 && (
+                <p className="text-sm text-sage-500 mb-2">Serves {preview.servings}</p>
+              )}
               <div className="flex gap-2 mt-4">
                 <button
                   onClick={handleSave}
@@ -231,6 +237,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-sm text-sage-500 mt-0.5">
                     {recipe.prep_time + recipe.cook_time} min
+                    {recipe.servings != null && recipe.servings > 0 && (
+                      <span className="ml-2">· Serves {recipe.servings}</span>
+                    )}
                   </div>
                 </Link>
               ))}

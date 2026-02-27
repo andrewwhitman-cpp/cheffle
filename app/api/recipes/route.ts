@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
+import { parseServingsToNumber } from '@/lib/servings-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
         r.instructions,
         r.prep_time,
         r.cook_time,
+        r.servings,
         r.source_url,
         r.skill_level_adjusted,
         r.created_at,
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted } = body;
+    const { name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted, servings } = body;
 
     if (!name || !instructions) {
       return NextResponse.json(
@@ -94,10 +96,12 @@ export async function POST(request: NextRequest) {
         ? String(skill_level_adjusted)
         : null;
 
+    const servingsNum = parseServingsToNumber(servings);
+
     const result = db
       .prepare(`
-        INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time, source_url, skill_level_adjusted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time, servings, source_url, skill_level_adjusted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .run(
         user.id,
@@ -107,6 +111,7 @@ export async function POST(request: NextRequest) {
         instructions,
         prep_time || 0,
         cook_time || 0,
+        servingsNum ?? null,
         source_url || null,
         skillLevelAdjusted
       );

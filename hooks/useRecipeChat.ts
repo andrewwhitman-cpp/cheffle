@@ -16,6 +16,7 @@ export interface ModifiedRecipe {
   instructions: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   skill_level_adjusted?: string | null;
 }
 

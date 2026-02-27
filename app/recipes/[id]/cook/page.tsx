@@ -11,6 +11,7 @@ interface Recipe {
   id: number;
   name: string;
   instructions: string;
+  servings?: number | null;
   source_url?: string;
 }
 
@@ -140,6 +141,7 @@ export default function CookPage() {
           instructions: normalizeInstructions(pendingRecipe.instructions) || pendingRecipe.instructions,
           prep_time: pendingRecipe.prep_time,
           cook_time: pendingRecipe.cook_time,
+          servings: pendingRecipe.servings ?? recipe.servings ?? null,
           source_url: recipe.source_url,
           skill_level_adjusted: pendingRecipe.skill_level_adjusted ?? null,
         }),
@@ -222,6 +224,9 @@ export default function CookPage() {
             <p className="text-xl sm:text-2xl text-sage-700 font-medium mb-1">{decodeHtmlEntities(recipe.name)}</p>
             <p className="text-base sm:text-lg text-sage-500 mb-4">
               Step {stepIndex + 1} of {steps.length}
+              {recipe.servings != null && recipe.servings > 0 && (
+                <span className="ml-2">· Serves {recipe.servings}</span>
+              )}
             </p>
 
             <div className="bg-white rounded-xl border border-sage-200 p-8 sm:p-12 min-h-[35vh] max-h-[50vh] flex flex-col justify-center overflow-y-auto mb-6">

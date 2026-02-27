@@ -4,6 +4,7 @@ import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { extractRecipeFromJsonLd, cleanHtmlForAi } from '@/lib/recipe-parser';
 import { extractRecipeWithAi } from '@/lib/openai';
 import { normalizeInstructions } from '@/lib/recipe-display';
+import { parseServingsToNumber } from '@/lib/servings-utils';
 import { adjustRecipeForSkillLevel } from '@/lib/recipe-adjustment';
 import type { SkillLevel } from '@/lib/skill-levels';
 
@@ -86,11 +87,12 @@ export async function POST(
       }
 
       const ingredients = JSON.stringify(parsed.ingredients || []);
+      const servingsNum = parseServingsToNumber((parsed as { servings?: string }).servings);
 
       db.prepare(`
         UPDATE recipes
         SET name = ?, description = ?, ingredients = ?, instructions = ?,
-            prep_time = ?, cook_time = ?, skill_level_adjusted = NULL, updated_at = CURRENT_TIMESTAMP
+            prep_time = ?, cook_time = ?, servings = ?, skill_level_adjusted = NULL, updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND user_id = ?
       `).run(
         parsed.name,
@@ -99,6 +101,7 @@ export async function POST(
         parsed.instructions,
         parsed.prep_time || 0,
         parsed.cook_time || 0,
+        servingsNum ?? null,
         recipeId,
         user.id
       );

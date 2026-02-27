@@ -9,6 +9,7 @@ interface Recipe {
   description: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
 }
@@ -36,6 +37,9 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
         <span>{totalTime} min</span>
         {recipe.prep_time > 0 && (
           <span className="ml-2">Prep: {recipe.prep_time} min</span>
+        )}
+        {recipe.servings != null && recipe.servings > 0 && (
+          <span className="ml-2">· Serves {recipe.servings}</span>
         )}
       </div>
     </Link>

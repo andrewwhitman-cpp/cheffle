@@ -11,6 +11,7 @@ interface Recipe {
   description: string;
   prep_time: number;
   cook_time: number;
+  servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
 }

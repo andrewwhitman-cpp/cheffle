@@ -4,6 +4,7 @@ import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { extractRecipeFromJsonLd, cleanHtmlForAi } from '@/lib/recipe-parser';
 import { extractRecipeWithAi } from '@/lib/openai';
 import { normalizeInstructions } from '@/lib/recipe-display';
+import { parseServingsToNumber } from '@/lib/servings-utils';
 import { adjustRecipeForSkillLevel } from '@/lib/recipe-adjustment';
 import type { SkillLevel } from '@/lib/skill-levels';
 
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
       instructions: string;
       prep_time: number;
       cook_time: number;
+      servings?: number | null;
       source_url?: string;
       skill_level_adjusted?: string | null;
     };
@@ -100,6 +102,7 @@ export async function POST(request: NextRequest) {
         ...jsonLdRecipe,
         instructions: normalizeInstructions(jsonLdRecipe.instructions) || jsonLdRecipe.instructions,
         source_url: url,
+        servings: parseServingsToNumber(jsonLdRecipe.servings) ?? undefined,
       };
     } else {
       // Fallback to AI
@@ -109,13 +112,14 @@ export async function POST(request: NextRequest) {
         ...aiRecipe,
         instructions: normalizeInstructions(aiRecipe.instructions) || aiRecipe.instructions,
         source_url: url,
+        servings: parseServingsToNumber(aiRecipe.servings) ?? undefined,
       };
     }
 
     // Apply skill-level adjustment if user has one set
     if (shouldAdjust && skillLevel) {
       const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel, kitchenContext);
-      recipe = { ...adjusted, source_url: url, skill_level_adjusted: skillLevel };
+      recipe = { ...adjusted, source_url: url, skill_level_adjusted: skillLevel, servings: recipe.servings };
     }
 
     return NextResponse.json(recipe);
