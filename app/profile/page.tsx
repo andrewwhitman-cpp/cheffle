@@ -11,6 +11,8 @@ import {
   type KitchenContext,
 } from '@/lib/kitchen-context';
 
+type ProfileSection = 'account' | 'cooking' | 'kitchen';
+
 function toggleInSet(set: Set<string>, value: string): Set<string> {
   const next = new Set(set);
   if (next.has(value)) next.delete(value);
@@ -18,16 +20,32 @@ function toggleInSet(set: Set<string>, value: string): Set<string> {
   return next;
 }
 
+const SIDEBAR_ITEMS: { id: ProfileSection; label: string }[] = [
+  { id: 'account', label: 'Account' },
+  { id: 'cooking', label: 'Cooking' },
+  { id: 'kitchen', label: 'Kitchen' },
+];
+
 export default function ProfilePage() {
+  const [activeSection, setActiveSection] = useState<ProfileSection>('account');
   const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [dietaryPreferences, setDietaryPreferences] = useState('');
   const [skillLevel, setSkillLevel] = useState<string>('');
   const [kitchenContext, setKitchenContext] = useState<KitchenContext>({});
-  const [kitchenExpanded, setKitchenExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -39,6 +57,8 @@ export default function ProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setDisplayName(data.display_name || '');
+        setUsername(data.username || '');
+        setEmail(data.email || '');
         setDietaryPreferences(
           Array.isArray(data.dietary_preferences)
             ? data.dietary_preferences.join(', ')
@@ -54,7 +74,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -91,6 +111,48 @@ export default function ProfilePage() {
     }
   };
 
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters');
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const res = await authFetch('/api/profile/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to change password');
+      }
+
+      setPasswordSuccess('Password updated successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPasswordSuccess(''), 4000);
+    } catch (err: any) {
+      setPasswordError(err.message || 'Failed to change password');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <ProtectedRoute>
@@ -103,60 +165,211 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-semibold text-sage-900 mb-6">Profile</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-sage-700 mb-2">
-              Display name
-            </label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
-              placeholder="Your name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-sage-700 mb-2">
-              Cooking skill level
-            </label>
-            <p className="text-xs text-sage-500 mb-2">
-              Recipes you import or modify will be adjusted for your level. This affects instructions, prep steps, and tips.
-            </p>
-            <select
-              value={skillLevel}
-              onChange={(e) => setSkillLevel(e.target.value)}
-              className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white"
-            >
-              <option value="">No adjustment (use recipe as-is)</option>
-              {SKILL_LEVELS.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
+        <div className="flex flex-col sm:flex-row gap-8">
+          {/* Sidebar */}
+          <nav className="w-full sm:w-48 shrink-0">
+            <ul className="space-y-1 border-b sm:border-b-0 sm:border-r border-sage-200 pb-4 sm:pb-0 sm:pr-6">
+              {SIDEBAR_ITEMS.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection(item.id)}
+                    className={`block w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeSection === item.id
+                        ? 'bg-terracotta-50 text-terracotta-700 border-l-2 sm:border-l-4 border-terracotta-500'
+                        : 'text-sage-600 hover:bg-sage-50 hover:text-sage-900'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                </li>
               ))}
-            </select>
-          </div>
+            </ul>
+          </nav>
 
-          <div>
-            <button
-              type="button"
-              onClick={() => setKitchenExpanded(!kitchenExpanded)}
-              className="flex items-center justify-between w-full text-left text-sm font-medium text-sage-700 mb-2 py-1"
-            >
-              Kitchen setup
-              <span className="text-sage-500">{kitchenExpanded ? '−' : '+'}</span>
-            </button>
-            <p className="text-xs text-sage-500 mb-3">
-              Help tailor recipes to your equipment, appliances, and preferences.
-            </p>
-            {kitchenExpanded && (
-              <div className="space-y-6 pl-0 border-l-2 border-sage-200 pl-4">
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {activeSection === 'account' && (
+              <div className="space-y-8">
+                <form onSubmit={handleProfileSubmit} className="space-y-6">
+                  <h2 className="text-lg font-medium text-sage-900">Account details</h2>
+                  <div>
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
+                      Display name
+                    </label>
+                    <input
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={username}
+                      readOnly
+                      className="w-full max-w-md px-4 py-2 border border-sage-200 rounded-lg bg-sage-50 text-sage-600 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      readOnly
+                      className="w-full max-w-md px-4 py-2 border border-sage-200 rounded-lg bg-sage-50 text-sage-600 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                    {error && (
+                      <span className="text-coral-700 text-sm">{error}</span>
+                    )}
+                    {success && (
+                      <span className="text-sage-700 text-sm">{success}</span>
+                    )}
+                  </div>
+                </form>
+
+                <form onSubmit={handlePasswordSubmit} className="space-y-6 pt-8 border-t border-sage-200">
+                  <h2 className="text-lg font-medium text-sage-900">Change password</h2>
+                  <div>
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
+                      Current password
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                      className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
+                      New password
+                    </label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
+                      placeholder="At least 6 characters"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
+                      Confirm new password
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      type="submit"
+                      disabled={passwordSaving}
+                      className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      {passwordSaving ? 'Updating...' : 'Update password'}
+                    </button>
+                    {passwordError && (
+                      <span className="text-coral-700 text-sm">{passwordError}</span>
+                    )}
+                    {passwordSuccess && (
+                      <span className="text-sage-700 text-sm">{passwordSuccess}</span>
+                    )}
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {activeSection === 'cooking' && (
+              <form onSubmit={handleProfileSubmit} className="space-y-6">
+                <h2 className="text-lg font-medium text-sage-900">Cooking preferences</h2>
                 <div>
-                  <label className="block text-xs font-medium text-sage-600 mb-2">Equipment I have</label>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">
+                    Cooking skill level
+                  </label>
+                  <p className="text-xs text-sage-500 mb-2">
+                    Recipes you import or modify will be adjusted for your level. This affects instructions, prep steps, and tips.
+                  </p>
+                  <select
+                    value={skillLevel}
+                    onChange={(e) => setSkillLevel(e.target.value)}
+                    className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white"
+                  >
+                    <option value="">No adjustment (use recipe as-is)</option>
+                    {SKILL_LEVELS.map((level) => (
+                      <option key={level.value} value={level.value}>
+                        {level.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">
+                    Dietary preferences
+                  </label>
+                  <input
+                    type="text"
+                    value={dietaryPreferences}
+                    onChange={(e) => setDietaryPreferences(e.target.value)}
+                    className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
+                    placeholder="e.g. vegetarian, gluten-free, dairy-free (comma-separated)"
+                  />
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                  {error && (
+                    <span className="text-coral-700 text-sm">{error}</span>
+                  )}
+                  {success && (
+                    <span className="text-sage-700 text-sm">{success}</span>
+                  )}
+                </div>
+              </form>
+            )}
+
+            {activeSection === 'kitchen' && (
+              <form onSubmit={handleProfileSubmit} className="space-y-6">
+                <h2 className="text-lg font-medium text-sage-900">Kitchen setup</h2>
+                <p className="text-sm text-sage-500">
+                  Help tailor recipes to your equipment, appliances, and preferences.
+                </p>
+                <div>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">Equipment I have</label>
                   <div className="flex flex-wrap gap-2">
                     {EQUIPMENT_OPTIONS.map((opt) => {
                       const have = new Set(kitchenContext.equipment_have || []);
@@ -182,7 +395,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-sage-600 mb-2">Appliances</label>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">Appliances</label>
                   <div className="space-y-2">
                     {APPLIANCE_OPTIONS.map((opt) => {
                       const have = new Set(kitchenContext.appliances_have || []);
@@ -290,7 +503,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-sage-600 mb-2">Constraints</label>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">Constraints</label>
                   <div className="flex flex-wrap gap-2">
                     {CONSTRAINT_OPTIONS.map((opt) => {
                       const constraints = new Set(kitchenContext.constraints || []);
@@ -315,39 +528,25 @@ export default function ProfilePage() {
                     })}
                   </div>
                 </div>
-              </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                  {error && (
+                    <span className="text-coral-700 text-sm">{error}</span>
+                  )}
+                  {success && (
+                    <span className="text-sage-700 text-sm">{success}</span>
+                  )}
+                </div>
+              </form>
             )}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-sage-700 mb-2">
-              Dietary preferences
-            </label>
-            <input
-              type="text"
-              value={dietaryPreferences}
-              onChange={(e) => setDietaryPreferences(e.target.value)}
-              className="w-full px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
-              placeholder="e.g. vegetarian, gluten-free, dairy-free (comma-separated)"
-            />
-          </div>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-            {error && (
-              <span className="text-coral-700 text-sm">{error}</span>
-            )}
-            {success && (
-              <span className="text-sage-700 text-sm">{success}</span>
-            )}
-          </div>
-        </form>
+        </div>
       </div>
     </ProtectedRoute>
   );
