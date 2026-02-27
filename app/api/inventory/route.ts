@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
+import { getUnitMergeKey } from '@/lib/units';
 
 function parseQuantity(value: unknown): number {
   if (typeof value === 'number' && !Number.isNaN(value)) return value;
@@ -56,31 +57,66 @@ export async function POST(request: NextRequest) {
     const items = Array.isArray(body.items) ? body.items : [body];
     const created: { id: number; user_id: number; name: string; quantity: number; unit: string; created_at: string; updated_at: string }[] = [];
 
+    const existingItems = (await db.all(
+      'SELECT id, name, quantity, unit FROM inventory WHERE user_id = ?',
+      user.id
+    )) as { id: number; name: string; quantity: number; unit: string }[];
+
     for (const item of items) {
       const name = String(item.name || '').trim();
       if (!name) continue;
 
       const quantity = parseQuantity(item.quantity ?? 0);
       const unit = String(item.unit ?? '').trim();
+      const incomingMergeKey = getUnitMergeKey(unit);
 
-      const result = await db.run(
-        `INSERT INTO inventory (user_id, name, quantity, unit) VALUES (?, ?, ?, ?)`,
-        user.id,
-        name,
-        quantity,
-        unit
+      const existing = existingItems.find(
+        (e) =>
+          e.name.toLowerCase() === name.toLowerCase() &&
+          getUnitMergeKey(e.unit) === incomingMergeKey
       );
 
-      const row = (await db.get('SELECT id, user_id, name, quantity, unit, created_at, updated_at FROM inventory WHERE id = ?', result.lastInsertRowid)) as {
-        id: number;
-        user_id: number;
-        name: string;
-        quantity: number;
-        unit: string;
-        created_at: string;
-        updated_at: string;
-      };
-      created.push(row);
+      if (existing) {
+        const newQuantity = existing.quantity + quantity;
+        await db.run(
+          'UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+          newQuantity,
+          existing.id,
+          user.id
+        );
+        const row = (await db.get('SELECT id, user_id, name, quantity, unit, created_at, updated_at FROM inventory WHERE id = ?', existing.id)) as {
+          id: number;
+          user_id: number;
+          name: string;
+          quantity: number;
+          unit: string;
+          created_at: string;
+          updated_at: string;
+        };
+        created.push(row);
+        const idx = existingItems.findIndex((e) => e.id === existing.id);
+        if (idx >= 0) existingItems[idx].quantity = newQuantity;
+      } else {
+        const result = await db.run(
+          `INSERT INTO inventory (user_id, name, quantity, unit) VALUES (?, ?, ?, ?)`,
+          user.id,
+          name,
+          quantity,
+          unit
+        );
+
+        const row = (await db.get('SELECT id, user_id, name, quantity, unit, created_at, updated_at FROM inventory WHERE id = ?', result.lastInsertRowid)) as {
+          id: number;
+          user_id: number;
+          name: string;
+          quantity: number;
+          unit: string;
+          created_at: string;
+          updated_at: string;
+        };
+        created.push(row);
+        existingItems.push({ id: row.id, name: row.name, quantity: row.quantity, unit: row.unit });
+      }
     }
 
     return NextResponse.json(Array.isArray(body.items) ? created : created[0]);

@@ -85,3 +85,49 @@ export const INVENTORY_UNITS = [
   'teaspoons',
   'tsp',
 ] as const;
+
+/** Map equivalent units to a canonical form for merge matching. */
+const UNIT_CANONICAL: Record<string, string> = {
+  gallons: 'gallon',
+  cups: 'cup',
+  tablespoons: 'tablespoon',
+  tbsp: 'tablespoon',
+  teaspoons: 'teaspoon',
+  tsp: 'teaspoon',
+  ounces: 'oz',
+  pound: 'lb',
+  pounds: 'lb',
+  grams: 'g',
+  cloves: 'clove',
+  pieces: 'piece',
+  slices: 'slice',
+  sprigs: 'sprig',
+  stalks: 'stalk',
+  bags: 'bag',
+  blocks: 'block',
+  bottles: 'bottle',
+  boxes: 'box',
+  cans: 'can',
+  containers: 'container',
+  cubes: 'cube',
+  drops: 'drop',
+  ears: 'ear',
+  'fluid ounce': 'fl oz',
+  'fluid ounces': 'fl oz',
+  heads: 'head',
+  jars: 'jar',
+  leaves: 'leaf',
+  liters: 'liter',
+  loaves: 'loaf',
+  packages: 'package',
+  pints: 'pint',
+  quarts: 'quart',
+  sheets: 'sheet',
+  strips: 'strip',
+};
+
+export function getUnitMergeKey(unit: string): string {
+  const u = unit.toLowerCase().trim();
+  if (!u) return '';
+  return UNIT_CANONICAL[u] || u;
+}

@@ -82,7 +82,13 @@ export default function InventoryPage() {
         throw new Error(data.message || 'Failed to add');
       }
       const created = await res.json();
-      setItems((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setItems((prev) => {
+        const existingIdx = prev.findIndex((i) => i.id === created.id);
+        const next = existingIdx >= 0
+          ? prev.map((i, idx) => (idx === existingIdx ? created : i))
+          : [...prev, created];
+        return next.sort((a, b) => a.name.localeCompare(b.name));
+      });
       setNewName('');
       setNewQuantity('');
       setNewUnit('');
