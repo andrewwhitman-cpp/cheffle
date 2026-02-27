@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
+import UnitCombobox from '@/components/UnitCombobox';
 
 interface InventoryItem {
   id: number;
@@ -13,8 +14,6 @@ interface InventoryItem {
   created_at: string;
   updated_at: string;
 }
-
-const COMMON_UNITS = ['', 'cup', 'cups', 'tbsp', 'tsp', 'oz', 'lb', 'g', 'ml', 'can', 'clove', 'bunch', 'piece'];
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -195,18 +194,12 @@ export default function InventoryPage() {
               className="w-24 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
               disabled={adding}
             />
-            <select
+            <UnitCombobox
               value={newUnit}
-              onChange={(e) => setNewUnit(e.target.value)}
-              className="w-28 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white"
+              onChange={setNewUnit}
+              placeholder="Unit"
               disabled={adding}
-            >
-              {COMMON_UNITS.map((u) => (
-                <option key={u || 'none'} value={u}>
-                  {u || '—'}
-                </option>
-              ))}
-            </select>
+            />
             <button
               type="submit"
               disabled={adding || !newName.trim()}
@@ -250,12 +243,11 @@ export default function InventoryPage() {
                         onChange={(e) => setEditQuantity(e.target.value)}
                         className="w-20 px-3 py-1.5 border border-sage-300 rounded focus:outline-none focus:ring-1 focus:ring-terracotta-500"
                       />
-                      <input
-                        type="text"
+                      <UnitCombobox
                         value={editUnit}
-                        onChange={(e) => setEditUnit(e.target.value)}
-                        placeholder="unit"
-                        className="w-20 px-3 py-1.5 border border-sage-300 rounded focus:outline-none focus:ring-1 focus:ring-terracotta-500"
+                        onChange={setEditUnit}
+                        placeholder="Unit"
+                        size="sm"
                       />
                       <button
                         type="submit"
