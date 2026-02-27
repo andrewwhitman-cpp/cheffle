@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
@@ -14,11 +14,10 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading, register } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace('/dashboard');
+      router.replace('/onboarding');
     }
   }, [authLoading, user, router]);
 
@@ -48,15 +47,7 @@ function RegisterForm() {
 
     try {
       await register(username, email, password);
-      const returnUrl = searchParams.get('returnUrl');
-      const safeReturnUrl =
-        returnUrl &&
-        returnUrl.startsWith('/') &&
-        !returnUrl.startsWith('//') &&
-        !returnUrl.includes('\\')
-          ? returnUrl
-          : null;
-      router.push(safeReturnUrl || '/dashboard');
+      router.push('/onboarding');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {

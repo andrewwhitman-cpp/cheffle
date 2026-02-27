@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Insert user
     const result = await db.run(
-      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+      'INSERT INTO users (username, email, password_hash, onboarding_complete) VALUES (?, ?, ?, 0)',
       username,
       email,
       passwordHash

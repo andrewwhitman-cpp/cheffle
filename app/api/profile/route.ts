@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     const row = (await db.get(
-      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, onboarding_complete, created_at FROM users WHERE id = ?',
       user.id
     )) as {
       id: number;
@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       dietary_preferences: string | null;
       skill_level: string | null;
       kitchen_context: string | null;
+      onboarding_complete: number | null;
       created_at: string;
     };
 
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest) {
       ...row,
       dietary_preferences: dietaryPrefs,
       kitchen_context: kitchenContext,
+      onboarding_complete: row.onboarding_complete != null ? Boolean(row.onboarding_complete) : true,
     });
   } catch (error: any) {
     console.error('Get profile error:', error);
@@ -81,7 +83,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { display_name, dietary_preferences, skill_level, kitchen_context } = body;
+    const { display_name, dietary_preferences, skill_level, kitchen_context, onboarding_complete } = body;
 
     const dietaryStr =
       dietary_preferences != null
@@ -103,17 +105,31 @@ export async function PUT(request: NextRequest) {
       ? JSON.stringify(kitchenContextValid)
       : null;
 
-    await db.run(
-      'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ? WHERE id = ?',
-      display_name != null ? String(display_name) : null,
-      dietaryStr,
-      skillLevelValue,
-      kitchenContextStr,
-      user.id
-    );
+    const onboardingCompleteValue = onboarding_complete === true ? 1 : null;
+
+    if (onboardingCompleteValue !== null) {
+      await db.run(
+        'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ?, onboarding_complete = ? WHERE id = ?',
+        display_name != null ? String(display_name) : null,
+        dietaryStr,
+        skillLevelValue,
+        kitchenContextStr,
+        onboardingCompleteValue,
+        user.id
+      );
+    } else {
+      await db.run(
+        'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ? WHERE id = ?',
+        display_name != null ? String(display_name) : null,
+        dietaryStr,
+        skillLevelValue,
+        kitchenContextStr,
+        user.id
+      );
+    }
 
     const row = (await db.get(
-      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, onboarding_complete, created_at FROM users WHERE id = ?',
       user.id
     )) as {
       id: number;
@@ -123,6 +139,7 @@ export async function PUT(request: NextRequest) {
       dietary_preferences: string | null;
       skill_level: string | null;
       kitchen_context: string | null;
+      onboarding_complete: number | null;
       created_at: string;
     };
 
@@ -148,6 +165,7 @@ export async function PUT(request: NextRequest) {
       ...row,
       dietary_preferences: dietaryPrefs,
       kitchen_context: kitchenContext,
+      onboarding_complete: row.onboarding_complete != null ? Boolean(row.onboarding_complete) : true,
     });
   } catch (error: any) {
     console.error('Update profile error:', error);

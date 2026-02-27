@@ -48,6 +48,12 @@ async function runMigrations() {
     }
   }
 
+  try {
+    await client.execute(`ALTER TABLE users ADD COLUMN onboarding_complete INTEGER DEFAULT 1`);
+  } catch {
+    // Column already exists
+  }
+
   await client.execute(`
     CREATE TABLE IF NOT EXISTS recipes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
