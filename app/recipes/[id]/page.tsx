@@ -8,6 +8,7 @@ import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } f
 import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 import { scaleIngredient } from '@/lib/ingredient-parser';
 import { SKILL_LEVELS, getSkillLevelLabel, getSkillLevelValue } from '@/lib/skill-levels';
+import { useRecipeChat } from '@/hooks/useRecipeChat';
 
 interface Ingredient {
   name: string;
@@ -25,11 +26,6 @@ interface Recipe {
   cook_time: number;
   source_url?: string;
   skill_level_adjusted?: string | null;
-}
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
 }
 
 interface ModifiedRecipe {
@@ -58,10 +54,17 @@ export default function RecipeDetailPage() {
     source_url: '',
   });
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const [pendingRecipe, setPendingRecipe] = useState<ModifiedRecipe | null>(null);
+  const {
+    chatMessages,
+    setChatMessages,
+    pendingRecipe,
+    setPendingRecipe,
+    clearPendingRecipe,
+    chatInput,
+    setChatInput,
+    chatLoading,
+    setChatLoading,
+  } = useRecipeChat(params.id as string);
   const [servingScale, setServingScale] = useState(1);
   const [scaleInput, setScaleInput] = useState('1');
   const [readjusting, setReadjusting] = useState(false);
@@ -297,7 +300,7 @@ export default function RecipeDetailPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || 'Failed to apply');
       }
-      setPendingRecipe(null);
+      clearPendingRecipe();
       await fetchRecipe();
     } catch (err: any) {
       setError(err.message || 'Failed to apply changes');
@@ -565,7 +568,7 @@ export default function RecipeDetailPage() {
                     Use these changes
                   </button>
                   <button
-                    onClick={() => setPendingRecipe(null)}
+                    onClick={clearPendingRecipe}
                     className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 text-sm font-medium"
                   >
                     Start over
