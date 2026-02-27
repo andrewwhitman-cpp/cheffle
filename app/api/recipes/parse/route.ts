@@ -11,7 +11,7 @@ import type { SkillLevel } from '@/lib/skill-levels';
 export async function POST(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const html = await fetchResponse.text();
 
     // Get user's skill level and kitchen context for recipe adjustment
-    const profile = db.prepare('SELECT skill_level, kitchen_context FROM users WHERE id = ?').get(user.id) as {
+    const profile = (await db.get('SELECT skill_level, kitchen_context FROM users WHERE id = ?', user.id)) as {
       skill_level: string | null;
       kitchen_context: string | null;
     } | undefined;

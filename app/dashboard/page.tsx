@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
 import { getSkillLevelLabel } from '@/lib/skill-levels';
+import { authFetch } from '@/lib/auth-fetch';
 
 interface Recipe {
   id: number;
@@ -43,10 +44,7 @@ export default function DashboardPage() {
 
   const fetchRecipes = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/recipes', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch('/api/recipes');
       if (res.ok) {
         const data = await res.json();
         setRecipes(data);
@@ -66,13 +64,9 @@ export default function DashboardPage() {
 
     setParsing(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/recipes/parse', {
+      const res = await authFetch('/api/recipes/parse', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
       });
 
@@ -92,13 +86,9 @@ export default function DashboardPage() {
     if (!preview) return;
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/recipes', {
+      const res = await authFetch('/api/recipes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: preview.name,
           description: preview.description,

@@ -68,7 +68,7 @@ export async function POST(
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -78,9 +78,7 @@ export async function POST(
     }
 
     const recipeId = parseInt(params.id, 10);
-    const recipe = db
-      .prepare('SELECT * FROM recipes WHERE id = ? AND user_id = ?')
-      .get(recipeId, user.id) as any;
+    const recipe = (await db.get('SELECT * FROM recipes WHERE id = ? AND user_id = ?', recipeId, user.id)) as any;
 
     if (!recipe) {
       return NextResponse.json(
@@ -125,7 +123,7 @@ ${recipeContext.instructions}
 
 Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min${recipeContext.servings ? `, Serves: ${recipeContext.servings}` : ''}`;
 
-    const profile = db.prepare('SELECT skill_level, kitchen_context FROM users WHERE id = ?').get(user.id) as {
+    const profile = (await db.get('SELECT skill_level, kitchen_context FROM users WHERE id = ?', user.id)) as {
       skill_level: string | null;
       kitchen_context: string | null;
     } | undefined;

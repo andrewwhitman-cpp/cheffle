@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { authFetch } from '@/lib/auth-fetch';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { useRecipeChat } from '@/hooks/useRecipeChat';
 
@@ -49,10 +50,7 @@ export default function CookPage() {
     if (!params.id) return;
     const fetchRecipe = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/recipes/${params.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await authFetch(`/api/recipes/${params.id}`);
 
         if (!res.ok) throw new Error('Recipe not found');
 
@@ -93,13 +91,9 @@ export default function CookPage() {
     setPendingRecipe(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}/chat`, {
+      const res = await authFetch(`/api/recipes/${params.id}/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
           history: chatMessages,
@@ -127,13 +121,9 @@ export default function CookPage() {
     if (!pendingRecipe || !recipe) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}`, {
+      const res = await authFetch(`/api/recipes/${params.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: pendingRecipe.name,
           description: pendingRecipe.description,

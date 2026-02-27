@@ -6,7 +6,7 @@ import { isEmptyKitchenContext, validateKitchenContext } from '@/lib/kitchen-con
 export async function GET(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -15,11 +15,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const row = db
-      .prepare(
-        'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, created_at FROM users WHERE id = ?'
-      )
-      .get(user.id) as {
+    const row = (await db.get(
+      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, created_at FROM users WHERE id = ?',
+      user.id
+    )) as {
       id: number;
       username: string;
       email: string;
@@ -72,7 +71,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -104,9 +103,8 @@ export async function PUT(request: NextRequest) {
       ? JSON.stringify(kitchenContextValid)
       : null;
 
-    db.prepare(
-      'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ? WHERE id = ?'
-    ).run(
+    await db.run(
+      'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ? WHERE id = ?',
       display_name != null ? String(display_name) : null,
       dietaryStr,
       skillLevelValue,
@@ -114,11 +112,10 @@ export async function PUT(request: NextRequest) {
       user.id
     );
 
-    const row = db
-      .prepare(
-        'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, created_at FROM users WHERE id = ?'
-      )
-      .get(user.id) as {
+    const row = (await db.get(
+      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, created_at FROM users WHERE id = ?',
+      user.id
+    )) as {
       id: number;
       username: string;
       email: string;

@@ -15,7 +15,7 @@ A full-stack meal planning application built with Next.js, TypeScript, and SQLit
 - **Frontend**: Next.js 14 (App Router) with React and TypeScript
 - **Styling**: Tailwind CSS
 - **Backend**: Next.js API Routes
-- **Database**: SQLite with better-sqlite3
+- **Database**: Turso (libSQL/SQLite-compatible) for Vercel deployment; local file for dev
 - **Authentication**: JWT tokens
 
 ## Getting Started

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
+import { authFetch } from '@/lib/auth-fetch';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 import { scaleIngredient } from '@/lib/ingredient-parser';
@@ -97,10 +98,7 @@ export default function RecipeDetailPage() {
 
   const fetchRecipe = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`/api/recipes/${params.id}`);
 
       if (!res.ok) throw new Error('Recipe not found');
 
@@ -129,13 +127,9 @@ export default function RecipeDetailPage() {
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}`, {
+      const res = await authFetch(`/api/recipes/${params.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           instructions: normalizeInstructions(formData.instructions) || formData.instructions,
@@ -162,10 +156,8 @@ export default function RecipeDetailPage() {
     if (!confirm('Are you sure you want to delete this recipe?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}`, {
+      const res = await authFetch(`/api/recipes/${params.id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
@@ -208,13 +200,9 @@ export default function RecipeDetailPage() {
     setPendingRecipe(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}/chat`, {
+      const res = await authFetch(`/api/recipes/${params.id}/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
           history: chatMessages,
@@ -246,13 +234,9 @@ export default function RecipeDetailPage() {
     setError('');
     setReadjusting(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}/readjust`, {
+      const res = await authFetch(`/api/recipes/${params.id}/readjust`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           skill_level: newLevel === '' ? null : newLevel,
         }),
@@ -284,13 +268,9 @@ export default function RecipeDetailPage() {
 
     setError('');
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${params.id}`, {
+      const res = await authFetch(`/api/recipes/${params.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: pendingRecipe.name,
           description: pendingRecipe.description,

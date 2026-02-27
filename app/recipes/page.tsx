@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import RecipeCard from '@/components/RecipeCard';
 import Link from 'next/link';
+import { authFetch } from '@/lib/auth-fetch';
 
 interface Recipe {
   id: number;
@@ -28,13 +29,10 @@ export default function RecipesPage() {
   const fetchRecipes = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
 
-      const res = await fetch(`/api/recipes?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`/api/recipes?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setRecipes(data);

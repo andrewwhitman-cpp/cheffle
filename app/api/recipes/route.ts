@@ -6,7 +6,7 @@ import { parseServingsToNumber } from '@/lib/servings-utils';
 export async function GET(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       params.push(parseInt(limit, 10));
     }
 
-    const recipes = db.prepare(query).all(...params) as any[];
+    const recipes = (await db.all(query, ...params)) as any[];
 
     const result = recipes.map((recipe) => ({
       ...recipe,
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -98,12 +98,9 @@ export async function POST(request: NextRequest) {
 
     const servingsNum = parseServingsToNumber(servings);
 
-    const result = db
-      .prepare(`
-        INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time, servings, source_url, skill_level_adjusted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `)
-      .run(
+    const result = await db.run(
+      `INSERT INTO recipes (user_id, name, description, ingredients, instructions, prep_time, cook_time, servings, source_url, skill_level_adjusted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         user.id,
         name,
         description || '',
@@ -114,12 +111,10 @@ export async function POST(request: NextRequest) {
         servingsNum ?? null,
         source_url || null,
         skillLevelAdjusted
-      );
+    );
 
-    const recipeId = result.lastInsertRowid as number;
-    const recipe = db
-      .prepare('SELECT * FROM recipes WHERE id = ?')
-      .get(recipeId) as any;
+    const recipeId = result.lastInsertRowid;
+    const recipe = (await db.get('SELECT * FROM recipes WHERE id = ?', recipeId)) as any;
 
     return NextResponse.json({
       ...recipe,

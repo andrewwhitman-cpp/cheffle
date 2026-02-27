@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -19,9 +19,7 @@ export async function GET(
     }
 
     const recipeId = parseInt(params.id, 10);
-    const recipe = db
-      .prepare('SELECT * FROM recipes WHERE id = ? AND user_id = ?')
-      .get(recipeId, user.id) as any;
+    const recipe = (await db.get('SELECT * FROM recipes WHERE id = ? AND user_id = ?', recipeId, user.id)) as any;
 
     if (!recipe) {
       return NextResponse.json(
@@ -49,7 +47,7 @@ export async function PUT(
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -59,9 +57,7 @@ export async function PUT(
     }
 
     const recipeId = parseInt(params.id, 10);
-    const existingRecipe = db
-      .prepare('SELECT id FROM recipes WHERE id = ? AND user_id = ?')
-      .get(recipeId, user.id);
+    const existingRecipe = await db.get('SELECT id FROM recipes WHERE id = ? AND user_id = ?', recipeId, user.id);
 
     if (!existingRecipe) {
       return NextResponse.json(
@@ -88,14 +84,13 @@ export async function PUT(
 
     const servingsNum = parseServingsToNumber(servings);
 
-    db.prepare(`
-      UPDATE recipes 
+    await db.run(
+      `UPDATE recipes 
       SET name = ?, description = ?, ingredients = ?, instructions = ?, 
           prep_time = ?, cook_time = ?, servings = ?, source_url = ?, 
           skill_level_adjusted = COALESCE(?, skill_level_adjusted),
           updated_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND user_id = ?
-    `).run(
+      WHERE id = ? AND user_id = ?`,
       name,
       description || '',
       JSON.stringify(ingredients || []),
@@ -109,9 +104,7 @@ export async function PUT(
       user.id
     );
 
-    const recipe = db
-      .prepare('SELECT * FROM recipes WHERE id = ?')
-      .get(recipeId) as any;
+    const recipe = (await db.get('SELECT * FROM recipes WHERE id = ?', recipeId)) as any;
 
     return NextResponse.json({
       ...recipe,
@@ -132,7 +125,7 @@ export async function DELETE(
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(
@@ -142,9 +135,7 @@ export async function DELETE(
     }
 
     const recipeId = parseInt(params.id, 10);
-    const existingRecipe = db
-      .prepare('SELECT id FROM recipes WHERE id = ? AND user_id = ?')
-      .get(recipeId, user.id);
+    const existingRecipe = await db.get('SELECT id FROM recipes WHERE id = ? AND user_id = ?', recipeId, user.id);
 
     if (!existingRecipe) {
       return NextResponse.json(
@@ -153,7 +144,7 @@ export async function DELETE(
       );
     }
 
-    db.prepare('DELETE FROM recipes WHERE id = ? AND user_id = ?').run(recipeId, user.id);
+    await db.run('DELETE FROM recipes WHERE id = ? AND user_id = ?', recipeId, user.id);
 
     return NextResponse.json({ message: 'Recipe deleted successfully' });
   } catch (error: any) {

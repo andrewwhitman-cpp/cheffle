@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { SKILL_LEVELS } from '@/lib/skill-levels';
+import { authFetch } from '@/lib/auth-fetch';
 import {
   EQUIPMENT_OPTIONS,
   APPLIANCE_OPTIONS,
@@ -34,10 +35,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch('/api/profile');
       if (res.ok) {
         const data = await res.json();
         setDisplayName(data.display_name || '');
@@ -63,18 +61,14 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('token');
       const prefs = dietaryPreferences
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const res = await fetch('/api/profile', {
+      const res = await authFetch('/api/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           display_name: displayName || null,
           dietary_preferences: prefs,

@@ -15,9 +15,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const user = db
-      .prepare('SELECT id, username, email, password_hash FROM users WHERE username = ?')
-      .get(username) as {
+    const user = (await db.get(
+      'SELECT id, username, email, password_hash FROM users WHERE username = ?',
+      username
+    )) as {
       id: number;
       username: string;
       email: string;

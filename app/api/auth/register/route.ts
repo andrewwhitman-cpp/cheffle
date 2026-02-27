@@ -22,9 +22,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = db
-      .prepare('SELECT id FROM users WHERE username = ? OR email = ?')
-      .get(username, email);
+    const existingUser = await db.get(
+      'SELECT id FROM users WHERE username = ? OR email = ?',
+      username,
+      email
+    );
 
     if (existingUser) {
       return NextResponse.json(
@@ -37,11 +39,14 @@ export async function POST(request: NextRequest) {
     const passwordHash = hashPassword(password);
 
     // Insert user
-    const result = db
-      .prepare('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)')
-      .run(username, email, passwordHash);
+    const result = await db.run(
+      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+      username,
+      email,
+      passwordHash
+    );
 
-    const userId = result.lastInsertRowid as number;
+    const userId = result.lastInsertRowid;
 
     // Generate token
     const token = generateToken({ userId, username });

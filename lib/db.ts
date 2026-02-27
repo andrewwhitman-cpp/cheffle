@@ -1,22 +1,28 @@
-import Database from 'better-sqlite3';
+import { createClient } from '@libsql/client';
 import path from 'path';
 import fs from 'fs';
 
 const dbDir = path.join(process.cwd(), 'database');
-if (!fs.existsSync(dbDir)) {
+const isLocal =
+  !process.env.TURSO_DATABASE_URL ||
+  process.env.TURSO_DATABASE_URL.startsWith('file:');
+
+if (isLocal && !fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const dbPath = path.join(dbDir, 'cheffle.db');
-const db = new Database(dbPath);
+const client = createClient({
+  url: process.env.TURSO_DATABASE_URL || `file:${path.join(dbDir, 'cheffle.db')}`,
+  authToken: isLocal ? undefined : process.env.TURSO_AUTH_TOKEN,
+});
 
-// Enable foreign keys
-db.pragma('foreign_keys = ON');
+export interface DbRunResult {
+  lastInsertRowid: number;
+  changes: number;
+}
 
-// Initialize database schema
-export function initDatabase() {
-  // Users table
-  db.exec(`
+async function runMigrations() {
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
@@ -28,30 +34,21 @@ export function initDatabase() {
     )
   `);
 
-  // Migrate existing users table: add new columns if missing
-  try {
-    db.exec(`ALTER TABLE users ADD COLUMN display_name TEXT`);
-  } catch {
-    // Column already exists
-  }
-  try {
-    db.exec(`ALTER TABLE users ADD COLUMN dietary_preferences TEXT`);
-  } catch {
-    // Column already exists
-  }
-  try {
-    db.exec(`ALTER TABLE users ADD COLUMN skill_level TEXT`);
-  } catch {
-    // Column already exists
-  }
-  try {
-    db.exec(`ALTER TABLE users ADD COLUMN kitchen_context TEXT`);
-  } catch {
-    // Column already exists
+  const alterColumns = [
+    'display_name',
+    'dietary_preferences',
+    'skill_level',
+    'kitchen_context',
+  ];
+  for (const col of alterColumns) {
+    try {
+      await client.execute(`ALTER TABLE users ADD COLUMN ${col} TEXT`);
+    } catch {
+      // Column already exists
+    }
   }
 
-  // Recipes table
-  db.exec(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS recipes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -68,31 +65,67 @@ export function initDatabase() {
     )
   `);
 
-  // Migrate existing recipes table: add source_url if missing
   try {
-    db.exec(`ALTER TABLE recipes ADD COLUMN source_url TEXT`);
+    await client.execute(`ALTER TABLE recipes ADD COLUMN source_url TEXT`);
   } catch {
     // Column already exists
   }
   try {
-    db.exec(`ALTER TABLE recipes ADD COLUMN skill_level_adjusted TEXT`);
+    await client.execute(`ALTER TABLE recipes ADD COLUMN skill_level_adjusted TEXT`);
   } catch {
     // Column already exists
   }
   try {
-    db.exec(`ALTER TABLE recipes ADD COLUMN servings INTEGER`);
+    await client.execute(`ALTER TABLE recipes ADD COLUMN servings INTEGER`);
   } catch {
     // Column already exists
   }
 
-  // Drop deprecated tables (ignore errors if they don't exist)
-  db.exec(`DROP TABLE IF EXISTS recipe_tags`);
-  db.exec(`DROP TABLE IF EXISTS meal_plans`);
-  db.exec(`DROP TABLE IF EXISTS ingredient_lists`);
-  db.exec(`DROP TABLE IF EXISTS tags`);
+  await client.execute('DROP TABLE IF EXISTS recipe_tags');
+  await client.execute('DROP TABLE IF EXISTS meal_plans');
+  await client.execute('DROP TABLE IF EXISTS ingredient_lists');
+  await client.execute('DROP TABLE IF EXISTS tags');
 }
 
-// Initialize on import
-initDatabase();
+let migrationsRun = false;
+
+async function ensureMigrations() {
+  if (!migrationsRun) {
+    await runMigrations();
+    migrationsRun = true;
+  }
+}
+
+const db = {
+  async get(sql: string, ...args: unknown[]): Promise<Record<string, unknown> | undefined> {
+    await ensureMigrations();
+    const result = await client.execute({ sql, args: args as (string | number | bigint | null)[] });
+    return result.rows[0] as Record<string, unknown> | undefined;
+  },
+
+  async all(sql: string, ...args: unknown[]): Promise<Record<string, unknown>[]> {
+    await ensureMigrations();
+    const result = await client.execute({ sql, args: args as (string | number | bigint | null)[] });
+    return result.rows as Record<string, unknown>[];
+  },
+
+  async run(sql: string, ...args: unknown[]): Promise<DbRunResult> {
+    await ensureMigrations();
+    const result = await client.execute({ sql, args: args as (string | number | bigint | null)[] });
+    return {
+      lastInsertRowid: Number(result.lastInsertRowid ?? 0),
+      changes: result.rowsAffected ?? 0,
+    };
+  },
+
+  async exec(sql: string): Promise<void> {
+    await ensureMigrations();
+    await client.execute(sql);
+  },
+};
+
+export function initDatabase(): Promise<void> {
+  return ensureMigrations();
+}
 
 export default db;

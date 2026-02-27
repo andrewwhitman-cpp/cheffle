@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json(

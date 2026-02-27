@@ -3,7 +3,19 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import db from './db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const DEFAULT_SECRET = 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_SECRET;
+
+if (JWT_SECRET === DEFAULT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error(
+    'JWT_SECRET must be set to a secure value in production. Update your .env file.'
+  );
+}
+if (JWT_SECRET === DEFAULT_SECRET && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    '[Cheffle] JWT_SECRET is using the default value. Set JWT_SECRET in .env for production.'
+  );
+}
 
 export interface JWTPayload {
   userId: number;
@@ -43,13 +55,15 @@ export function comparePassword(password: string, hash: string): boolean {
   return bcrypt.compareSync(password, hash);
 }
 
-export function getUserFromToken(token: string | null): { id: number; username: string; email: string } | null {
+export async function getUserFromToken(
+  token: string | null
+): Promise<{ id: number; username: string; email: string } | null> {
   if (!token) return null;
 
   const payload = verifyToken(token);
   if (!payload) return null;
 
-  const user = db.prepare('SELECT id, username, email FROM users WHERE id = ?').get(payload.userId) as {
+  const user = (await db.get('SELECT id, username, email FROM users WHERE id = ?', payload.userId)) as {
     id: number;
     username: string;
     email: string;

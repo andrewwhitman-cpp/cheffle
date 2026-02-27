@@ -16,16 +16,14 @@ export async function POST(
 ) {
   try {
     const token = getTokenFromRequest(request);
-    const user = getUserFromToken(token);
+    const user = await getUserFromToken(token);
 
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const recipeId = parseInt(params.id, 10);
-    const recipe = db
-      .prepare('SELECT * FROM recipes WHERE id = ? AND user_id = ?')
-      .get(recipeId, user.id) as any;
+    const recipe = (await db.get('SELECT * FROM recipes WHERE id = ? AND user_id = ?', recipeId, user.id)) as any;
 
     if (!recipe) {
       return NextResponse.json({ message: 'Recipe not found' }, { status: 404 });
@@ -89,12 +87,11 @@ export async function POST(
       const ingredients = JSON.stringify(parsed.ingredients || []);
       const servingsNum = parseServingsToNumber((parsed as { servings?: string }).servings);
 
-      db.prepare(`
-        UPDATE recipes
+      await db.run(
+        `UPDATE recipes
         SET name = ?, description = ?, ingredients = ?, instructions = ?,
             prep_time = ?, cook_time = ?, servings = ?, skill_level_adjusted = NULL, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND user_id = ?
-      `).run(
+        WHERE id = ? AND user_id = ?`,
         parsed.name,
         parsed.description || '',
         ingredients,
@@ -118,7 +115,7 @@ export async function POST(
       };
 
       let kitchenContext = null;
-      const profile = db.prepare('SELECT kitchen_context FROM users WHERE id = ?').get(user.id) as {
+      const profile = (await db.get('SELECT kitchen_context FROM users WHERE id = ?', user.id)) as {
         kitchen_context: string | null;
       } | undefined;
       if (profile?.kitchen_context) {
@@ -131,12 +128,11 @@ export async function POST(
 
       const adjusted = await adjustRecipeForSkillLevel(currentRecipe, skill_level as SkillLevel, kitchenContext);
 
-      db.prepare(`
-        UPDATE recipes
+      await db.run(
+        `UPDATE recipes
         SET name = ?, description = ?, ingredients = ?, instructions = ?,
             prep_time = ?, cook_time = ?, skill_level_adjusted = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND user_id = ?
-      `).run(
+        WHERE id = ? AND user_id = ?`,
         adjusted.name,
         adjusted.description,
         JSON.stringify(adjusted.ingredients),
@@ -151,7 +147,7 @@ export async function POST(
       return NextResponse.json({ message: 'Invalid skill level' }, { status: 400 });
     }
 
-    const updated = db.prepare('SELECT * FROM recipes WHERE id = ?').get(recipeId) as any;
+    const updated = (await db.get('SELECT * FROM recipes WHERE id = ?', recipeId)) as any;
     return NextResponse.json({
       ...updated,
       ingredients: JSON.parse(updated.ingredients || '[]'),
