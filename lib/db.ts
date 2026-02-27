@@ -91,6 +91,22 @@ async function runMigrations() {
   await client.execute('DROP TABLE IF EXISTS meal_plans');
   await client.execute('DROP TABLE IF EXISTS ingredient_lists');
   await client.execute('DROP TABLE IF EXISTS tags');
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS inventory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      quantity REAL NOT NULL DEFAULT 0,
+      unit TEXT NOT NULL DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_inventory_user_name ON inventory(user_id, name)`
+  );
 }
 
 let migrationsRun = false;

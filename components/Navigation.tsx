@@ -21,6 +21,7 @@ export default function Navigation() {
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/recipes', label: 'Recipes' },
+    { href: '/inventory', label: 'Inventory' },
     { href: '/profile', label: 'Profile' },
   ];
 

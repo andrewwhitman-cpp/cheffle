@@ -1,27 +1,37 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { useRecipeChat } from '@/hooks/useRecipeChat';
+import ConfirmConsumptionModal from '@/components/ConfirmConsumptionModal';
+
+interface RecipeIngredient {
+  name: string;
+  quantity: string;
+  unit: string;
+}
 
 interface Recipe {
   id: number;
   name: string;
   instructions: string;
+  ingredients?: RecipeIngredient[];
   servings?: number | null;
   source_url?: string;
 }
 
 export default function CookPage() {
   const params = useParams();
+  const router = useRouter();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const {
     chatMessages,
     setChatMessages,
@@ -40,11 +50,25 @@ export default function CookPage() {
   const isLast = steps.length === 0 || stepIndex === steps.length - 1;
 
   const goNext = useCallback(() => {
-    if (!isLast) setCurrentStepIndex((i) => i + 1);
+    if (isLast) {
+      setShowConfirmModal(true);
+    } else {
+      setCurrentStepIndex((i) => i + 1);
+    }
   }, [isLast]);
   const goPrev = useCallback(() => {
     if (!isFirst) setCurrentStepIndex((i) => i - 1);
   }, [isFirst]);
+
+  const handleConfirmDone = useCallback(() => {
+    setShowConfirmModal(false);
+    router.push(`/recipes/${params.id}`);
+  }, [params.id, router]);
+
+  const handleSkipDone = useCallback(() => {
+    setShowConfirmModal(false);
+    router.push(`/recipes/${params.id}`);
+  }, [params.id, router]);
 
   useEffect(() => {
     if (!params.id) return;
@@ -236,10 +260,9 @@ export default function CookPage() {
                 </button>
                 <button
                   onClick={goNext}
-                  disabled={isLast}
-                  className="px-6 py-3 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-medium"
+                  className="px-6 py-3 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 transition text-sm font-medium"
                 >
-                  Next
+                  {isLast ? 'Done cooking' : 'Next'}
                 </button>
               </div>
               <p className="text-sm text-sage-500">← → to navigate</p>
@@ -297,6 +320,16 @@ export default function CookPage() {
                   </button>
                 </div>
               </div>
+            )}
+
+            {showConfirmModal && recipe && (
+              <ConfirmConsumptionModal
+                recipeId={recipe.id}
+                recipeName={decodeHtmlEntities(recipe.name)}
+                ingredients={recipe.ingredients || []}
+                onConfirm={handleConfirmDone}
+                onSkip={handleSkipDone}
+              />
             )}
 
             <form onSubmit={handleChatSubmit} className="flex gap-2 shrink-0">

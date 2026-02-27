@@ -72,7 +72,7 @@ export function normalizeIngredient(
 /**
  * Parse a quantity string to a number. Returns null for non-numeric (e.g. "to taste").
  */
-function parseQuantityToNumber(q: string): number | null {
+export function parseQuantityToNumber(q: string): number | null {
   const trimmed = String(q || '').trim();
   if (!trimmed) return null;
   if (/^to\s+taste$/i.test(trimmed)) return null;
