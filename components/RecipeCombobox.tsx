@@ -17,6 +17,9 @@ interface RecipeComboboxProps {
   recipeRemoved?: boolean;
   removedRecipeId?: number;
   listMaxHeight?: string;
+  /** When true, renders input + list stacked (input sticky, list scrolls). For use in popovers. */
+  stackedLayout?: boolean;
+  autoFocus?: boolean;
 }
 
 export default function RecipeCombobox({
@@ -29,8 +32,10 @@ export default function RecipeCombobox({
   recipeRemoved = false,
   removedRecipeId,
   listMaxHeight = 'max-h-48',
+  stackedLayout = false,
+  autoFocus = false,
 }: RecipeComboboxProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(stackedLayout);
   const [inputValue, setInputValue] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -78,8 +83,56 @@ export default function RecipeCombobox({
     }
   };
 
+  const listContent = (
+    <ul
+      className={
+        stackedLayout
+          ? 'flex-1 min-h-0 overflow-auto rounded-lg border border-sage-200 bg-white py-1 shadow-inner mt-2'
+          : `absolute z-10 mt-1 left-0 right-0 overflow-auto rounded-lg border border-sage-200 bg-white py-1 shadow-lg ${listMaxHeight}`
+      }
+    >
+      <li>
+        <button
+          type="button"
+          className={`w-full px-4 py-2 text-left text-sm hover:bg-sage-100 focus:bg-sage-100 focus:outline-none ${
+            value == null ? 'bg-terracotta-50 text-terracotta-800' : 'text-sage-600'
+          }`}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            handleSelect(null);
+          }}
+        >
+          — Select recipe —
+        </button>
+      </li>
+      {filteredRecipes.length === 0 ? (
+        <li className="px-4 py-2 text-sm text-sage-500">No matching recipes</li>
+      ) : (
+        filteredRecipes.map((r) => (
+          <li key={r.id}>
+            <button
+              type="button"
+              className={`w-full px-4 py-2 text-left text-sm hover:bg-sage-100 focus:bg-sage-100 focus:outline-none ${
+                r.id === value ? 'bg-terracotta-50 text-terracotta-800' : 'text-sage-800'
+              }`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(r.id);
+              }}
+            >
+              {r.name}
+            </button>
+          </li>
+        ))
+      )}
+    </ul>
+  );
+
   return (
-    <div ref={containerRef} className={`relative flex-1 ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative ${stackedLayout ? 'flex flex-1 flex-col min-h-0' : 'flex-1'} ${className}`}
+    >
       <input
         type="text"
         value={isOpen ? inputValue : displayValue || ''}
@@ -94,47 +147,11 @@ export default function RecipeCombobox({
         disabled={disabled}
         className={`flex-1 min-w-0 px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white text-sage-900 placeholder:text-sage-400 ${
           recipeRemoved ? 'border-coral-300 bg-coral-50' : 'border-sage-300'
-        }`}
+        } ${stackedLayout ? 'flex-shrink-0' : ''}`}
         autoComplete="off"
+        autoFocus={autoFocus}
       />
-      {isOpen && (
-        <ul className={`absolute z-10 mt-1 left-0 right-0 overflow-auto rounded-lg border border-sage-200 bg-white py-1 shadow-lg ${listMaxHeight}`}>
-          <li>
-            <button
-              type="button"
-              className={`w-full px-4 py-2 text-left text-sm hover:bg-sage-100 focus:bg-sage-100 focus:outline-none ${
-                value == null ? 'bg-terracotta-50 text-terracotta-800' : 'text-sage-600'
-              }`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSelect(null);
-              }}
-            >
-              — Select recipe —
-            </button>
-          </li>
-          {filteredRecipes.length === 0 ? (
-            <li className="px-4 py-2 text-sm text-sage-500">No matching recipes</li>
-          ) : (
-            filteredRecipes.map((r) => (
-              <li key={r.id}>
-                <button
-                  type="button"
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-sage-100 focus:bg-sage-100 focus:outline-none ${
-                    r.id === value ? 'bg-terracotta-50 text-terracotta-800' : 'text-sage-800'
-                  }`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleSelect(r.id);
-                  }}
-                >
-                  {r.name}
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
-      )}
+      {isOpen && listContent}
     </div>
   );
 }

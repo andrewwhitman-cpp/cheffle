@@ -359,15 +359,32 @@ export default function MealPlanPage() {
       return;
     }
     const rect = triggerRef.current.getBoundingClientRect();
-    const popoverWidth = 272; // w-64 = 16rem = 256px, plus padding
+    const popoverWidth = 336; // w-80 = 20rem = 320px, plus padding
+    const popoverHeight = Math.min(520, window.innerHeight - 32); // match max-h
     const padding = 8;
-    const top = rect.bottom + padding;
-    let left = rect.left;
-    // Shift left if extending past right edge
-    if (left + popoverWidth > window.innerWidth - 16) {
-      left = window.innerWidth - popoverWidth - 16;
+    const viewportPadding = 16;
+
+    let top: number;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+
+    if (spaceBelow >= popoverHeight) {
+      // Open below trigger
+      top = rect.bottom + padding;
+    } else if (spaceAbove >= popoverHeight) {
+      // Open above trigger
+      top = rect.top - popoverHeight - padding;
+    } else {
+      // Not enough space either way: fit within viewport
+      top = Math.max(viewportPadding, Math.min(rect.bottom + padding, window.innerHeight - popoverHeight - viewportPadding));
     }
-    if (left < 16) left = 16;
+
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - viewportPadding) {
+      left = window.innerWidth - popoverWidth - viewportPadding;
+    }
+    if (left < viewportPadding) left = viewportPadding;
+
     setPopoverPosition({ top, left });
   }, [activePopover]);
 
@@ -596,38 +613,36 @@ export default function MealPlanPage() {
         )}
 
         {/* Recipe selection popover - rendered in portal to avoid calendar overflow clipping */}
-        {activePopover &&
-          popoverPosition &&
-          typeof document !== 'undefined' &&
-          createPortal(
-            <div
-              ref={popoverRef}
-              className="fixed z-50 w-64 max-h-[min(400px,calc(100vh-2rem))] overflow-auto p-2 bg-white border border-sage-200 rounded-lg shadow-lg"
-              style={{ top: popoverPosition.top, left: popoverPosition.left }}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <div className="text-xs font-medium text-sage-600 mb-2">
-                {activePopover.mealType.charAt(0).toUpperCase() + activePopover.mealType.slice(1)} –{' '}
-                {formatDisplayDate(activePopover.dateStr)}
-              </div>
+        {activePopover && popoverPosition && typeof document !== 'undefined' && createPortal(
+          <div
+            ref={popoverRef}
+            className="fixed z-50 w-80 min-h-[420px] max-h-[min(520px,calc(100vh-2rem))] flex flex-col p-3 bg-white border border-sage-200 rounded-lg shadow-lg"
+            style={{ top: popoverPosition.top, left: popoverPosition.left }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="text-xs font-medium text-sage-600 mb-2 flex-shrink-0">
+              {activePopover.mealType.charAt(0).toUpperCase() + activePopover.mealType.slice(1)} –{' '}
+              {formatDisplayDate(activePopover.dateStr)}
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col">
               <RecipeCombobox
                 recipes={recipes}
                 value={getEntry(activePopover.dateStr, activePopover.mealType)?.recipe_id ?? null}
                 onChange={(id) => updateEntryLocal(activePopover.dateStr, activePopover.mealType, id)}
                 placeholder="Search recipes..."
-                listMaxHeight="max-h-72"
-                recipeRemoved={
-                  (() => {
-                    const entry = getEntry(activePopover.dateStr, activePopover.mealType);
-                    const rid = entry?.recipe_id;
-                    return rid != null && !recipes.find((r) => r.id === rid);
-                  })()
-                }
+                stackedLayout
+                autoFocus
+                recipeRemoved={(() => {
+                  const entry = getEntry(activePopover.dateStr, activePopover.mealType);
+                  const rid = entry?.recipe_id;
+                  return rid != null && !recipes.find((r) => r.id === rid);
+                })()}
                 removedRecipeId={getEntry(activePopover.dateStr, activePopover.mealType)?.recipe_id ?? undefined}
               />
-            </div>,
-            document.body
-          )}
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </ProtectedRoute>
   );
