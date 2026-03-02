@@ -98,41 +98,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const existing = (await db.get(
-      'SELECT id FROM meal_plans WHERE user_id = ? AND plan_date = ? AND meal_type = ?',
-      user.id,
-      plan_date,
-      meal_type
-    )) as { id: number } | undefined;
-
-    if (existing) {
-      await db.run(
-        'UPDATE meal_plans SET recipe_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-        recipeId,
-        existing.id,
-        user.id
-      );
-      const row = (await db.get('SELECT id, user_id, plan_date, meal_type, recipe_id, created_at, updated_at FROM meal_plans WHERE id = ?', existing.id)) as {
-        id: number;
-        user_id: number;
-        plan_date: string;
-        meal_type: string;
-        recipe_id: number | null;
-        created_at: string;
-        updated_at: string;
-      };
-      return NextResponse.json(row);
-    }
-
-    const result = await db.run(
-      'INSERT INTO meal_plans (user_id, plan_date, meal_type, recipe_id) VALUES (?, ?, ?, ?)',
+    await db.run(
+      `INSERT INTO meal_plans (user_id, plan_date, meal_type, recipe_id) VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id, plan_date, meal_type) DO UPDATE SET
+         recipe_id = excluded.recipe_id,
+         updated_at = CURRENT_TIMESTAMP`,
       user.id,
       plan_date,
       meal_type,
       recipeId
     );
 
-    const row = (await db.get('SELECT id, user_id, plan_date, meal_type, recipe_id, created_at, updated_at FROM meal_plans WHERE id = ?', result.lastInsertRowid)) as {
+    const row = (await db.get(
+      'SELECT id, user_id, plan_date, meal_type, recipe_id, created_at, updated_at FROM meal_plans WHERE user_id = ? AND plan_date = ? AND meal_type = ?',
+      user.id,
+      plan_date,
+      meal_type
+    )) as {
       id: number;
       user_id: number;
       plan_date: string;
@@ -169,7 +151,8 @@ export async function DELETE(request: NextRequest) {
     const meal_type = searchParams.get('meal_type');
 
     if (id) {
-      const result = await db.run('DELETE FROM meal_plans WHERE id = ? AND user_id = ?', parseInt(id, 10), user.id);
+      const idNum = parseInt(id, 10);
+      const result = await db.run('DELETE FROM meal_plans WHERE id = ? AND user_id = ?', idNum, user.id);
       if (result.changes === 0) {
         return NextResponse.json(
           { message: 'Meal plan entry not found' },

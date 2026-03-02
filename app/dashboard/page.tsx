@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getSkillLevelLabel } from '@/lib/skill-levels';
 import { authFetch } from '@/lib/auth-fetch';
 
@@ -29,20 +30,73 @@ interface ParsedRecipe {
   skill_level_adjusted?: string | null;
 }
 
+interface MealPlanEntry {
+  id: number;
+  plan_date: string;
+  meal_type: string;
+  recipe_id: number | null;
+}
+
+interface ShoppingListItem {
+  id: number;
+  name: string;
+  quantity: number;
+  unit: string;
+  purchased: number;
+}
+
+interface ShoppingList {
+  id: number;
+  name: string;
+  items: ShoppingListItem[];
+}
+
+const MEAL_ORDER = ['breakfast', 'lunch', 'dinner'] as const;
+const MEAL_LABELS: Record<string, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+
+function formatDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 export default function DashboardPage() {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const [url, setUrl] = useState('');
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState('');
   const [preview, setPreview] = useState<ParsedRecipe | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchRecipes();
-  }, []);
+  const [todayMeals, setTodayMeals] = useState<MealPlanEntry[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
+  const [loadingMeals, setLoadingMeals] = useState(true);
+  const [loadingRecipes, setLoadingRecipes] = useState(true);
+  const [loadingShopping, setLoadingShopping] = useState(true);
 
-  const fetchRecipes = async () => {
+  const todayStr = formatDate(new Date());
+
+  const fetchTodayMeals = useCallback(async () => {
+    try {
+      const doFetch = async (): Promise<MealPlanEntry[]> => {
+        const res = await authFetch(`/api/meal-plans?start=${todayStr}&end=${todayStr}`, { cache: 'no-store' });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      };
+      let data = await doFetch();
+      if (data.length === 0) {
+        await new Promise((r) => setTimeout(r, 400));
+        data = await doFetch();
+      }
+      setTodayMeals(data);
+    } catch (err) {
+      console.error('Failed to fetch meal plan', err);
+    } finally {
+      setLoadingMeals(false);
+    }
+  }, [todayStr]);
+
+  const fetchRecipes = useCallback(async () => {
     try {
       const res = await authFetch('/api/recipes');
       if (res.ok) {
@@ -52,9 +106,35 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Failed to fetch recipes', err);
     } finally {
-      setLoading(false);
+      setLoadingRecipes(false);
     }
-  };
+  }, []);
+
+  const fetchShoppingList = useCallback(async () => {
+    try {
+      const res = await authFetch('/api/shopping-lists?latest=true');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && !Array.isArray(data) && data.items) {
+          setShoppingList(data);
+        } else {
+          setShoppingList(null);
+        }
+      } else {
+        setShoppingList(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch shopping list', err);
+    } finally {
+      setLoadingShopping(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTodayMeals();
+    fetchRecipes();
+    fetchShoppingList();
+  }, [fetchTodayMeals, fetchRecipes, fetchShoppingList]);
 
   const handleParse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,8 +155,8 @@ export default function DashboardPage() {
         throw new Error(data.message || 'Failed to parse recipe');
       }
       setPreview(data);
-    } catch (err: any) {
-      setParseError(err.message || 'Failed to parse recipe');
+    } catch (err: unknown) {
+      setParseError(err instanceof Error ? err.message : 'Failed to parse recipe');
     } finally {
       setParsing(false);
     }
@@ -110,8 +190,9 @@ export default function DashboardPage() {
       setPreview(null);
       setUrl('');
       setRecipes((prev) => [recipe, ...prev]);
-    } catch (err: any) {
-      setParseError(err.message || 'Failed to save recipe');
+      router.push(`/recipes/${recipe.id}`);
+    } catch (err: unknown) {
+      setParseError(err instanceof Error ? err.message : 'Failed to save recipe');
     } finally {
       setSaving(false);
     }
@@ -121,6 +202,10 @@ export default function DashboardPage() {
     setPreview(null);
     setParseError('');
   };
+
+  const recipeMap = Object.fromEntries(recipes.map((r) => [r.id, r]));
+  const recentRecipes = recipes.slice(0, 8);
+  const unpurchasedCount = shoppingList?.items?.filter((i) => !i.purchased).length ?? 0;
 
   return (
     <ProtectedRoute>
@@ -188,10 +273,92 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Recipe list */}
+        {/* Today's meals */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium text-sage-900">Today&apos;s meals</h2>
+            <Link
+              href="/meal-plan"
+              className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium"
+            >
+              View meal plan
+            </Link>
+          </div>
+          <div className="p-4 bg-white border border-sage-200 rounded-lg">
+            {loadingMeals ? (
+              <div className="text-sage-500 py-4">Loading...</div>
+            ) : (
+              <div className="space-y-2">
+                {todayMeals.length === 0 ? (
+                  <p className="text-sage-500">Nothing planned for today.</p>
+                ) : (
+                  MEAL_ORDER.map((mealType) => {
+                    const entry = todayMeals.find((e) => e.meal_type === mealType);
+                    const recipe = entry?.recipe_id ? recipeMap[entry.recipe_id] : null;
+                    return (
+                      <div key={mealType} className="flex justify-between items-center text-sm gap-4">
+                        <span className="text-sage-600 shrink-0">{MEAL_LABELS[mealType]}</span>
+                        {recipe ? (
+                          <Link
+                            href={`/recipes/${recipe.id}`}
+                            className="text-terracotta-600 hover:text-terracotta-700 font-medium truncate"
+                          >
+                            {recipe.name}
+                          </Link>
+                        ) : (
+                          <span className="text-sage-400">—</span>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Shopping list summary */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium text-sage-900">Shopping list</h2>
+            <Link
+              href="/shopping-list"
+              className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium"
+            >
+              View list
+            </Link>
+          </div>
+          <div className="p-4 bg-white border border-sage-200 rounded-lg">
+            {loadingShopping ? (
+              <div className="text-sage-500 py-4">Loading...</div>
+            ) : (
+              <>
+                {shoppingList ? (
+                  <p className="text-sage-500">
+                    {unpurchasedCount === 0
+                      ? 'All items purchased'
+                      : `${unpurchasedCount} item${unpurchasedCount === 1 ? '' : 's'} to buy`}
+                  </p>
+                ) : (
+                  <p className="text-sage-500">No shopping list.</p>
+                )}
+                {!shoppingList && (
+                  <Link
+                    href="/meal-plan"
+                    className="mt-2 inline-block text-sm text-terracotta-600 hover:text-terracotta-700 font-medium"
+                  >
+                    Create one from your meal plan →
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Recently added */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-sage-900">My recipes</h2>
+            <h2 className="text-lg font-medium text-sage-900">Recently added</h2>
             <Link
               href="/recipes"
               className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium"
@@ -199,42 +366,26 @@ export default function DashboardPage() {
               View all
             </Link>
           </div>
-
-          {loading ? (
-            <div className="text-sage-500 py-8">Loading...</div>
-          ) : recipes.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-sage-300 rounded-lg">
-              <p className="text-sage-600 mb-2">No recipes yet.</p>
-              <p className="text-sm text-sage-500">
-                Paste a recipe URL above to add your first recipe.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recipes.slice(0, 8).map((recipe) => (
-                <Link
-                  key={recipe.id}
-                  href={`/recipes/${recipe.id}`}
-                  className="block p-4 border border-sage-200 rounded-lg hover:border-terracotta-300 hover:shadow-sm transition"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-sage-900">{recipe.name}</span>
-                    {recipe.skill_level_adjusted && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800">
-                        Adjusted for {getSkillLevelLabel(recipe.skill_level_adjusted)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-sage-500 mt-0.5">
-                    {recipe.prep_time + recipe.cook_time} min
-                    {recipe.servings != null && recipe.servings > 0 && (
-                      <span className="ml-2">· Serves {recipe.servings}</span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="p-4 bg-white border border-sage-200 rounded-lg">
+            {loadingRecipes ? (
+              <div className="text-sage-500 py-4">Loading...</div>
+            ) : recentRecipes.length === 0 ? (
+              <p className="text-sage-500">No recipes yet. Add one above.</p>
+            ) : (
+              <ul className="space-y-2">
+                {recentRecipes.map((recipe) => (
+                  <li key={recipe.id}>
+                    <Link
+                      href={`/recipes/${recipe.id}`}
+                      className="text-terracotta-600 hover:text-terracotta-700 font-medium"
+                    >
+                      {recipe.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </ProtectedRoute>

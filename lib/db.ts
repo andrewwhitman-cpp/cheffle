@@ -88,7 +88,7 @@ async function runMigrations() {
   }
 
   await client.execute('DROP TABLE IF EXISTS recipe_tags');
-  await client.execute('DROP TABLE IF EXISTS meal_plans');
+  // Do NOT drop meal_plans - it would wipe user data on every new process (dev restart, serverless cold start)
   await client.execute('DROP TABLE IF EXISTS ingredient_lists');
   await client.execute('DROP TABLE IF EXISTS tags');
 

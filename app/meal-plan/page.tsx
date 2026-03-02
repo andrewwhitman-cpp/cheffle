@@ -139,15 +139,24 @@ export default function MealPlanPage() {
   }, []);
 
   const fetchEntries = useCallback(async () => {
-    const res = await authFetch(`/api/meal-plans?start=${startStr}&end=${endStr}`);
-    if (res.ok) {
+    const doFetch = async (): Promise<{ data: MealPlanEntry[]; ok: boolean }> => {
+      const res = await authFetch(`/api/meal-plans?start=${startStr}&end=${endStr}`, { cache: 'no-store' });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setError((errData as { message?: string }).message || 'Failed to load meal plan');
+        return { data: [], ok: false };
+      }
       const data = await res.json();
-      setEntries(data);
-      setSavedEntries(data);
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.message || 'Failed to load meal plan');
+      return { data: Array.isArray(data) ? data : [], ok: true };
+    };
+    let result = await doFetch();
+    if (result.ok && result.data.length === 0) {
+      await new Promise((r) => setTimeout(r, 400));
+      result = await doFetch();
     }
+    if (result.ok) setError('');
+    setEntries(result.data);
+    setSavedEntries(result.data);
   }, [startStr, endStr]);
 
   useEffect(() => {
@@ -172,6 +181,36 @@ export default function MealPlanPage() {
   const getEntry = (dateStr: string, mealType: string): MealPlanEntry | undefined =>
     entries.find((e) => e.plan_date === dateStr && e.meal_type === mealType);
 
+  const persistEntryImmediate = useCallback(
+    async (planDate: string, mealType: string, recipeId: number | null) => {
+      setError('');
+      try {
+        if (recipeId == null) {
+          await authFetch(`/api/meal-plans?plan_date=${encodeURIComponent(planDate)}&meal_type=${encodeURIComponent(mealType)}`, { method: 'DELETE' });
+        } else {
+          const res = await authFetch('/api/meal-plans', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan_date: planDate, meal_type: mealType, recipe_id: recipeId }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.message || 'Failed to save');
+          }
+        }
+        const res = await authFetch(`/api/meal-plans?start=${startStr}&end=${endStr}`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          setEntries(data);
+          setSavedEntries(data);
+        }
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to save');
+      }
+    },
+    [startStr, endStr]
+  );
+
   const updateEntryLocal = (planDate: string, mealType: string, recipeId: number | null) => {
     setEntries((prev) => {
       const rest = prev.filter((e) => !(e.plan_date === planDate && e.meal_type === mealType));
@@ -189,6 +228,7 @@ export default function MealPlanPage() {
         updated_at: '',
       };
       setActivePopover(null);
+      persistEntryImmediate(planDate, mealType, recipeId);
       return [...rest, newEntry].sort(
         (a, b) =>
           a.plan_date.localeCompare(b.plan_date) ||
@@ -219,12 +259,18 @@ export default function MealPlanPage() {
       }
       const existingDates = new Set(entries.map((e) => `${e.plan_date}:${e.meal_type}`));
       const toDelete = savedEntries.filter(
-        (e) => !existingDates.has(`${e.plan_date}:${e.meal_type}`)
+        (e) =>
+          e.plan_date >= startStr &&
+          e.plan_date <= endStr &&
+          !existingDates.has(`${e.plan_date}:${e.meal_type}`)
       );
-      for (const e of toDelete) {
-        await authFetch(`/api/meal-plans?id=${e.id}`, { method: 'DELETE' });
+      if (entries.length === 0 && toDelete.length > 0) {
+      } else {
+        for (const e of toDelete) {
+          await authFetch(`/api/meal-plans?id=${e.id}`, { method: 'DELETE' });
+        }
       }
-      const res = await authFetch(`/api/meal-plans?start=${startStr}&end=${endStr}`);
+      const res = await authFetch(`/api/meal-plans?start=${startStr}&end=${endStr}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setEntries(data);
@@ -242,8 +288,7 @@ export default function MealPlanPage() {
     setShowSavePrompt(true);
   };
 
-  const handleCreateShoppingList = () => {
-    setShowSavePrompt(false);
+  const openShoppingListModal = () => {
     const mealEntries = entries.filter((e) => e.recipe_id != null).map((e) => ({
       id: e.id,
       plan_date: e.plan_date,
@@ -261,6 +306,11 @@ export default function MealPlanPage() {
     }));
     const items = computeShoppingList(mealEntries, invList, recipeList);
     setShowShoppingModal(true);
+  };
+
+  const handleCreateShoppingList = () => {
+    setShowSavePrompt(false);
+    openShoppingListModal();
   };
 
   const handleSaveWithoutList = async () => {
@@ -488,13 +538,13 @@ export default function MealPlanPage() {
               Next →
             </button>
           </div>
-          {dirty && (
+          {(dirty || entries.some((e) => e.recipe_id != null)) && (
             <button
               type="button"
-              onClick={handleSaveClick}
+              onClick={dirty ? handleSaveClick : openShoppingListModal}
               className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium"
             >
-              Save meal plan
+              {dirty ? 'Save meal plan' : 'Create shopping list'}
             </button>
           )}
         </div>

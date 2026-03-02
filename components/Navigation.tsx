@@ -32,7 +32,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
-            <Link href="/dashboard" className="flex items-center">
+            <Link href="/dashboard" className="flex items-center" prefetch={false}>
               <span className="text-xl font-semibold tracking-tight text-terracotta-600">Cheffle</span>
             </Link>
             <div className="hidden sm:ml-8 sm:flex sm:space-x-6">
@@ -40,6 +40,7 @@ export default function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={link.href === '/dashboard' || link.href === '/meal-plan' ? false : undefined}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname === link.href
                       ? 'border-terracotta-500 text-sage-900'
