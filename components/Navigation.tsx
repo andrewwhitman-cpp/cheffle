@@ -19,7 +19,7 @@ export default function Navigation() {
   }
 
   const navLinks = [
-    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/dashboard', label: 'Home' },
     { href: '/recipes', label: 'Recipes' },
     { href: '/meal-plan', label: 'Meal plan' },
     { href: '/shopping-list', label: 'Shopping list' },
