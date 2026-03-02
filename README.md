@@ -37,47 +37,49 @@ cd cheffle
 npm install
 ```
 
-2. Copy `.env.example` to `.env.local`:
+2. Set up environment variables for **development**:
 
-```bash
-cp .env.example .env.local
-```
+   ```bash
+   cp .env.development.example .env.development
+   # Edit .env.development with your dev Turso credentials
+   ```
 
-3. Set environment variables in `.env.local`:
+   Or use `.env.local` (overrides `.env.development`). Required:
+   - **JWT_SECRET**: `openssl rand -base64 32`
+   - **OPENAI_API_KEY**: From [OpenAI](https://platform.openai.com)
+   - **TURSO_DATABASE_URL** and **TURSO_AUTH_TOKEN**: Create a **dev** database at [turso.tech](https://turso.tech). Omit to use local `database/cheffle.db`.
 
-- **JWT_SECRET** (required): Generate with `openssl rand -base64 32`
-- **OPENAI_API_KEY** (required): From [OpenAI](https://platform.openai.com)
-- **TURSO_DATABASE_URL** and **TURSO_AUTH_TOKEN** (optional for dev): Omit to use local `database/cheffle.db`
-
-4. Run the dev server:
+3. Run the dev server:
 
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000)
+4. Open [http://localhost:3000](http://localhost:3000)
 
 ## Deployment (Vercel)
 
 1. Push your repo to GitHub and import the project in [Vercel](https://vercel.com).
 
-2. Add environment variables in Vercel (Settings → Environment Variables):
+2. Add environment variables in Vercel (Settings → Environment Variables) for **Production**:
 
    | Variable             | Required | Description                          |
    | -------------------- | -------- | ------------------------------------ |
    | JWT_SECRET           | Yes      | Secure random string (e.g. `openssl rand -base64 32`) |
    | OPENAI_API_KEY       | Yes      | OpenAI API key                       |
-   | TURSO_DATABASE_URL   | Yes      | `libsql://your-db.turso.io`         |
-   | TURSO_AUTH_TOKEN    | Yes      | Turso auth token                     |
+   | TURSO_DATABASE_URL   | Yes      | `libsql://your-prod-db.turso.io` (use a **separate** DB from dev) |
+   | TURSO_AUTH_TOKEN    | Yes      | Auth token for the production database |
 
 3. Deploy. Vercel will run `npm run build` and deploy.
 
-### Turso setup
+### Turso setup (dev vs production)
 
-1. Create an account at [turso.tech](https://turso.tech)
-2. Create a database in the Turso dashboard
-3. Copy the database URL and create an auth token
-4. Run migrations: the app creates tables on first request, or you can apply the schema from `lib/db.ts` manually
+Create **two** databases at [turso.tech](https://turso.tech):
+
+- **Dev**: e.g. `cheffle-dev` — use in `.env.development` or `.env.local` when running `npm run dev`
+- **Prod**: e.g. `cheffle-prod` — use in Vercel environment variables for production
+
+Next.js loads `.env.development` when `next dev` and `.env.production` (or Vercel env vars) when building for production, so dev and prod stay separate.
 
 ## Project Structure
 
