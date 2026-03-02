@@ -373,7 +373,7 @@ export default function RecipeDetailPage() {
               <div className="flex gap-2">
                 <Link
                   href={`/recipes/${recipe.id}/cook`}
-                  className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 transition text-sm font-medium"
+                  className="px-4 py-2 bg-sage-600 text-white rounded-lg hover:bg-sage-700 transition text-sm font-medium"
                 >
                   Start cooking
                 </Link>
