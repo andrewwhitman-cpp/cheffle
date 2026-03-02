@@ -27,6 +27,7 @@ export default function InventoryPage() {
   const [editName, setEditName] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
   const [editUnit, setEditUnit] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchInventory();
@@ -144,8 +145,14 @@ export default function InventoryPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Remove this ingredient from your inventory?')) return;
+  const handleDeleteClick = (id: number) => {
+    setDeleteConfirmId(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    const id = deleteConfirmId;
+    if (id == null) return;
+    setDeleteConfirmId(null);
     setError('');
 
     try {
@@ -176,6 +183,34 @@ export default function InventoryPage() {
         {error && (
           <div className="mb-6 p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {/* Delete confirmation modal */}
+        {deleteConfirmId != null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-sage-900/50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+              <h2 className="text-lg font-semibold text-sage-900 mb-2">Remove ingredient</h2>
+              <p className="text-sage-600 mb-6">
+                Remove this ingredient from your inventory?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="px-4 py-2 bg-coral-600 text-white rounded-lg hover:bg-coral-700 font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -280,7 +315,7 @@ export default function InventoryPage() {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => handleDeleteClick(item.id)}
                           className="text-sm text-coral-600 hover:text-coral-700 font-medium"
                         >
                           Remove
