@@ -31,7 +31,7 @@ export default function GlossaryPage() {
           />
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(100vh-16rem)] pr-2">
+        <div>
           {filteredTerms.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-sage-300 rounded-lg">
               <p className="text-sage-600">No terms match your search.</p>
