@@ -11,6 +11,7 @@ import { scaleIngredient } from '@/lib/ingredient-parser';
 import { SKILL_LEVELS, getSkillLevelLabel, getSkillLevelValue } from '@/lib/skill-levels';
 import { scaleServingsDisplay } from '@/lib/servings-utils';
 import { useRecipeChat } from '@/hooks/useRecipeChat';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface Ingredient {
   name: string;
@@ -73,6 +74,7 @@ export default function RecipeDetailPage() {
   const [servingScale, setServingScale] = useState(1);
   const [scaleInput, setScaleInput] = useState('1');
   const [readjusting, setReadjusting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const parseScaleInput = (value: string): number | null => {
     const trimmed = value.trim();
@@ -153,8 +155,6 @@ export default function RecipeDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this recipe?')) return;
-
     try {
       const res = await authFetch(`/api/recipes/${params.id}`, {
         method: 'DELETE',
@@ -298,8 +298,23 @@ export default function RecipeDetailPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="text-center py-12 text-sage-500">Loading...</div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="h-4 bg-sage-200 rounded w-32 mb-8 animate-pulse" />
+          <div className="bg-white rounded-lg border border-sage-200 p-6 animate-pulse">
+            <div className="h-8 bg-sage-200 rounded w-3/4 mb-4" />
+            <div className="h-4 bg-sage-100 rounded w-full mb-2" />
+            <div className="h-4 bg-sage-100 rounded w-2/3 mb-6" />
+            <div className="flex gap-4 mb-6">
+              <div className="h-4 bg-sage-200 rounded w-20" />
+              <div className="h-4 bg-sage-200 rounded w-20" />
+              <div className="h-4 bg-sage-200 rounded w-24" />
+            </div>
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-4 bg-sage-100 rounded" style={{ width: `${90 - i * 5}%` }} />
+              ))}
+            </div>
+          </div>
         </div>
       </ProtectedRoute>
     );
@@ -384,7 +399,7 @@ export default function RecipeDetailPage() {
                   Edit
                 </button>
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setShowDeleteModal(true)}
                   className="px-4 py-2 border border-coral-300 text-coral-700 rounded-lg hover:bg-coral-50 transition text-sm font-medium"
                 >
                   Delete
@@ -431,9 +446,13 @@ export default function RecipeDetailPage() {
                     onChange={(e) => handleScaleChange(e.target.value)}
                     onBlur={() => setScaleInput(String(servingScale))}
                     placeholder="1"
+                    title="Scale ingredients by this factor (e.g. 2 for double, 0.5 for half)"
                     className="w-14 px-2 py-0.5 text-sm border border-sage-300 rounded focus:outline-none focus:ring-1 focus:ring-terracotta-500 focus:border-terracotta-500"
                   />
                   <span className="text-xs text-sage-500">×</span>
+                  <span className="text-xs text-sage-400" title="Scale ingredients by this factor (e.g. 2 for double, 0.5 for half)">
+                    (multiplier)
+                  </span>
                 </div>
               </div>
               {pendingRecipe ? (
@@ -733,6 +752,17 @@ export default function RecipeDetailPage() {
             </div>
           </form>
         )}
+
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDelete}
+          title="Delete recipe"
+          message={`Are you sure you want to delete "${decodeHtmlEntities(recipe.name)}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          variant="danger"
+        />
       </div>
     </ProtectedRoute>
   );

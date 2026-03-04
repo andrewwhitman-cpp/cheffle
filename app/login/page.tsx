@@ -16,7 +16,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace('/dashboard');
+      router.replace('/');
     }
   }, [authLoading, user, router]);
 
@@ -43,7 +43,7 @@ function LoginForm() {
         !returnUrl.includes('\\')
           ? returnUrl
           : null;
-      router.push(safeReturnUrl || '/dashboard');
+      router.push(safeReturnUrl || '/');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {

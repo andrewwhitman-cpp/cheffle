@@ -33,15 +33,16 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
       {recipe.description && (
         <p className="text-sage-600 text-sm mb-4 line-clamp-2">{recipe.description}</p>
       )}
-      <div className="text-sm text-sage-500">
-        <span>{totalTime} min</span>
-        {recipe.prep_time > 0 && (
-          <span className="ml-2">Prep: {recipe.prep_time} min</span>
-        )}
-        {recipe.servings != null && recipe.servings > 0 && (
-          <span className="ml-2">· Serves {recipe.servings}</span>
-        )}
-      </div>
+      {(recipe.prep_time > 0 || recipe.cook_time > 0 || totalTime > 0 || (recipe.servings != null && recipe.servings > 0)) && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-sage-500">
+          {recipe.prep_time > 0 && <span>Prep: {recipe.prep_time} min</span>}
+          {recipe.cook_time > 0 && <span>Cook: {recipe.cook_time} min</span>}
+          {totalTime > 0 && <span>Total: {totalTime} min</span>}
+          {recipe.servings != null && recipe.servings > 0 && (
+            <span>Serves {recipe.servings}</span>
+          )}
+        </div>
+      )}
     </Link>
   );
 }

@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import RecipeCard from '@/components/RecipeCard';
+import RecipeCardSkeleton from '@/components/RecipeCardSkeleton';
 import Link from 'next/link';
 import { authFetch } from '@/lib/auth-fetch';
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface Recipe {
   id: number;
@@ -22,15 +25,11 @@ export default function RecipesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchRecipes();
-  }, []);
-
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async (query: string) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
+      if (query.trim()) params.append('search', query.trim());
 
       const res = await authFetch(`/api/recipes?${params.toString()}`);
       if (res.ok) {
@@ -42,11 +41,32 @@ export default function RecipesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const isInitialMount = useRef(true);
+
+  // Initial load
+  useEffect(() => {
+    fetchRecipes('');
+  }, [fetchRecipes]);
+
+  // Debounced live search when user types (skip on initial mount)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchRecipes(searchQuery);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, fetchRecipes]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchRecipes();
+    fetchRecipes(searchQuery);
   };
 
   return (
@@ -55,7 +75,7 @@ export default function RecipesPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold text-sage-900">Recipes</h1>
           <Link
-            href="/dashboard"
+            href="/"
             className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium"
           >
             Add recipe from URL
@@ -81,12 +101,16 @@ export default function RecipesPage() {
         </form>
 
         {loading ? (
-          <div className="text-center py-12 text-sage-500">Loading...</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <RecipeCardSkeleton key={i} />
+            ))}
+          </div>
         ) : recipes.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-sage-300 rounded-lg">
             <p className="text-sage-600 mb-2">No recipes found.</p>
             <Link
-              href="/dashboard"
+              href="/"
               className="text-terracotta-600 hover:text-terracotta-700 font-medium"
             >
               Add a recipe from URL →

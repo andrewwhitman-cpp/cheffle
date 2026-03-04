@@ -42,7 +42,7 @@ export default function OnboardingPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.onboarding_complete) {
-          router.replace('/dashboard');
+          router.replace('/');
           return;
         }
       }
@@ -61,7 +61,7 @@ export default function OnboardingPage() {
         method: 'POST',
       });
       if (res.ok) {
-        router.push('/dashboard');
+        router.push('/');
       } else {
         setError('Failed to skip. Please try again.');
       }
@@ -98,7 +98,7 @@ export default function OnboardingPage() {
         throw new Error(data.message || 'Failed to save');
       }
 
-      router.push('/dashboard');
+      router.push('/');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {
