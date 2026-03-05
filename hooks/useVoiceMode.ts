@@ -123,6 +123,7 @@ export function useVoiceMode(options: UseVoiceModeOptions): UseVoiceModeReturn {
       };
 
       rec.onend = () => {
+        if (recognitionRef.current !== rec) return;
         recognitionRef.current = null;
         setIsListening(false);
         if (
