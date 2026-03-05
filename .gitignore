@@ -89,6 +89,7 @@ lerna-debug.log*
 
 # Security: test credentials and sensitive docs
 TEST_ACCOUNT.md
+PROJECT_PLAN.md
 *credentials*
 *secrets*
 *.key
