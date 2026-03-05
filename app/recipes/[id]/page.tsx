@@ -66,6 +66,7 @@ export default function RecipeDetailPage() {
     pendingRecipe,
     setPendingRecipe,
     clearPendingRecipe,
+    clearChat,
     chatInput,
     setChatInput,
     chatLoading,
@@ -536,7 +537,19 @@ export default function RecipeDetailPage() {
 
           {/* AI Chat - right column, sticky so it stays visible when scrolling */}
           <div className="bg-white rounded-lg border border-sage-200 p-6 flex flex-col lg:h-[calc(100vh-8rem)] lg:sticky lg:top-4">
-            <h2 className="text-lg font-medium text-sage-900 mb-1">Talk with Cheffle</h2>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h2 className="text-lg font-medium text-sage-900">Talk with Cheffle</h2>
+              {chatMessages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  disabled={chatLoading}
+                  className="text-sm text-sage-600 hover:text-sage-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  New chat
+                </button>
+              )}
+            </div>
             <p className="text-sm text-sage-600 mb-4">
               I&apos;m here to help! Ask me to tweak this recipe—add rice, make it vegetarian, double it, or anything else you have in mind.
             </p>

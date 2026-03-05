@@ -75,12 +75,21 @@ export function useRecipeChat(recipeId: string | undefined) {
     setPendingRecipe(null);
   }, []);
 
+  const clearChat = useCallback(() => {
+    setChatMessages([]);
+    setPendingRecipe(null);
+    if (recipeId && typeof window !== 'undefined') {
+      localStorage.removeItem(`${STORAGE_KEY_PREFIX}${recipeId}`);
+    }
+  }, [recipeId]);
+
   return {
     chatMessages,
     setChatMessages,
     pendingRecipe,
     setPendingRecipe,
     clearPendingRecipe,
+    clearChat,
     chatInput,
     setChatInput,
     chatLoading,
