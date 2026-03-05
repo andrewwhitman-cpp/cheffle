@@ -3,7 +3,7 @@
  * Aggregates recipe ingredients, subtracts inventory, returns items to buy.
  */
 
-import { parseQuantityToNumber } from './ingredient-parser';
+import { parseQuantityToNumber, isFuzzyIngredient } from './ingredient-parser';
 import { findBestInventoryMatch } from './ingredient-matching';
 import {
   convertToBaseUnit,
@@ -78,6 +78,8 @@ export function computeShoppingList(
     const scale = 1;
 
     for (const ing of ingredients) {
+      if (isFuzzyIngredient(ing)) continue;
+
       const qty = parseQty(ing.quantity);
       if (qty <= 0) continue;
 

@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
-import { parseQuantityToNumber } from '@/lib/ingredient-parser';
+import { parseQuantityToNumber, isFuzzyIngredient } from '@/lib/ingredient-parser';
 import { findBestInventoryMatch } from '@/lib/ingredient-matching';
 import {
   convertToBaseUnit,
   convertFromBaseUnit,
   areUnitsCompatible,
+  getUnitCategory,
   type UnitCategory,
 } from '@/lib/unit-conversion';
+import { getUnitMergeKey } from '@/lib/units';
 
 interface ConsumeIngredient {
   name: string;
@@ -61,6 +63,10 @@ export async function POST(request: NextRequest) {
     const warnings: string[] = [];
 
     for (const ing of toUse) {
+      if (isFuzzyIngredient({ name: ing.name, quantity: String(ing.quantity ?? ''), unit: ing.unit })) {
+        continue;
+      }
+
       const qty =
         typeof ing.quantity === 'number'
           ? ing.quantity
@@ -99,22 +105,32 @@ export async function POST(request: NextRequest) {
 
       const invConverted = convertToBaseUnit(invQty, invUnit);
       const usedConverted = convertToBaseUnit(qty, usedUnit);
-      if (!invConverted || !usedConverted) {
+
+      let newValueInInvUnit: number;
+
+      if (invConverted && usedConverted) {
+        const remainingBase = invConverted.value - usedConverted.value;
+        const overspent = remainingBase < 0;
+        const newQty = Math.max(0, remainingBase);
+        if (overspent) {
+          warnings.push(`Used more ${invRow.name} than in inventory; set to 0`);
+        }
+        const category: UnitCategory = invConverted.category;
+        const converted = convertFromBaseUnit(newQty, invUnit, category);
+        if (converted == null) {
+          errors.push(`Could not convert remaining for "${ing.name}"`);
+          continue;
+        }
+        newValueInInvUnit = converted;
+      } else if (getUnitCategory(invUnit) === 'count' && getUnitCategory(usedUnit) === 'count' && getUnitMergeKey(invUnit) === getUnitMergeKey(usedUnit)) {
+        const remaining = invQty - qty;
+        const overspent = remaining < 0;
+        newValueInInvUnit = Math.max(0, remaining);
+        if (overspent) {
+          warnings.push(`Used more ${invRow.name} than in inventory; set to 0`);
+        }
+      } else {
         errors.push(`Could not convert units for "${ing.name}"`);
-        continue;
-      }
-
-      const remainingBase = invConverted.value - usedConverted.value;
-      const overspent = remainingBase < 0;
-      const newQty = Math.max(0, remainingBase);
-      if (overspent) {
-        warnings.push(`Used more ${invRow.name} than in inventory; set to 0`);
-      }
-      const category: UnitCategory = invConverted.category;
-      const newValueInInvUnit = convertFromBaseUnit(newQty, invUnit, category);
-
-      if (newValueInInvUnit == null) {
-        errors.push(`Could not convert remaining for "${ing.name}"`);
         continue;
       }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
 import UnitCombobox from '@/components/UnitCombobox';
+import { parseQuantityToNumberOrZero } from '@/lib/ingredient-parser';
 
 interface InventoryItem {
   id: number;
@@ -50,16 +51,6 @@ export default function InventoryPage() {
     }
   };
 
-  const parseQuantity = (val: string): number => {
-    const trimmed = val.trim();
-    if (!trimmed) return 0;
-    const n = parseFloat(trimmed);
-    if (!Number.isNaN(n)) return n;
-    const frac = trimmed.match(/^(\d+)\/(\d+)$/);
-    if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
-    return 0;
-  };
-
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -73,7 +64,7 @@ export default function InventoryPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          quantity: parseQuantity(newQuantity) || 0,
+          quantity: parseQuantityToNumberOrZero(newQuantity) || 0,
           unit: newUnit.trim(),
         }),
       });
@@ -126,7 +117,7 @@ export default function InventoryPage() {
         body: JSON.stringify({
           id: editingId,
           name: editName.trim(),
-          quantity: parseQuantity(editQuantity),
+          quantity: parseQuantityToNumberOrZero(editQuantity),
           unit: editUnit.trim(),
         }),
       });

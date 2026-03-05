@@ -3,6 +3,90 @@
  * Handles formats like "2 cups flour", "1 tsp salt", "1/4 cup sugar", "to taste".
  */
 
+export type Quantity =
+  | { type: 'numeric'; value: number; range?: [number, number] }
+  | { type: 'fuzzy'; raw: string };
+
+/** Fuzzy quantity patterns (case-insensitive) - undefined/variable quantity */
+const FUZZY_PATTERNS = [
+  /^to\s+taste$/i,
+  /^as\s+(needed|desired)$/i,
+  /^optional$/i,
+  /^for\s+garnish$/i,
+  /^some$/i,
+  /^a\s+few$/i,
+  /^a\s+pinch$/i,
+  /^a\s+dash$/i,
+];
+
+/** Fuzzy phrases that may appear in ingredient name */
+const FUZZY_NAME_PHRASES = /\b(to taste|as needed|as desired|optional|for garnish|some|a few|a pinch|a dash)\b/i;
+
+export function isNumericQuantity(q: Quantity): q is { type: 'numeric'; value: number; range?: [number, number] } {
+  return q.type === 'numeric';
+}
+
+export function isFuzzyQuantity(q: Quantity): q is { type: 'fuzzy'; raw: string } {
+  return q.type === 'fuzzy';
+}
+
+/**
+ * Parse a quantity string into a typed Quantity.
+ * Numeric: integers, decimals, fractions, mixed, ranges.
+ * Fuzzy: to taste, as needed, optional, etc.
+ */
+export function parseQuantity(q: string): Quantity {
+  const trimmed = String(q || '').trim();
+  if (!trimmed) return { type: 'fuzzy', raw: '' };
+
+  for (const pat of FUZZY_PATTERNS) {
+    if (pat.test(trimmed)) return { type: 'fuzzy', raw: trimmed };
+  }
+
+  // Simple integer or decimal
+  const simple = trimmed.match(/^(\d+\.?\d*)$/);
+  if (simple) return { type: 'numeric', value: parseFloat(simple[1]) };
+
+  // Fraction: 1/2, 3/4, etc.
+  const frac = trimmed.match(/^(\d+)\/(\d+)$/);
+  if (frac) {
+    const val = parseInt(frac[1], 10) / parseInt(frac[2], 10);
+    return { type: 'numeric', value: val };
+  }
+
+  // Mixed: 1 1/2, 2 3/4
+  const mixed = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixed) {
+    const whole = parseInt(mixed[1], 10);
+    const num = parseInt(mixed[2], 10);
+    const den = parseInt(mixed[3], 10);
+    const val = whole + num / den;
+    return { type: 'numeric', value: val };
+  }
+
+  // Range: 1-2, 1 to 2
+  const range = trimmed.match(/^(\d+\.?\d*)\s*[-–—to]+\s*(\d+\.?\d*)$/i);
+  if (range) {
+    const a = parseFloat(range[1]);
+    const b = parseFloat(range[2]);
+    return { type: 'numeric', value: (a + b) / 2, range: [a, b] };
+  }
+
+  return { type: 'fuzzy', raw: trimmed };
+}
+
+/**
+ * Check if an ingredient is fuzzy (undefined/variable quantity).
+ * Returns true only for to taste, as needed, optional, etc.
+ * Count units with numeric quantity (e.g. "2 cloves") are NOT fuzzy.
+ */
+export function isFuzzyIngredient(ing: { name: string; quantity: string; unit: string }): boolean {
+  const q = parseQuantity(String(ing.quantity || '').trim());
+  if (q.type === 'fuzzy') return true;
+  const name = String(ing.name || '').trim();
+  return FUZZY_NAME_PHRASES.test(name);
+}
+
 const UNITS = [
   'cup', 'cups', 'cu', 'tbsp', 'tablespoon', 'tablespoons', 'table', 'tables',
   'tsp', 'teaspoon', 'teaspoons', 'teasp', 'teasps',
@@ -22,8 +106,8 @@ export function parseIngredientString(str: string): { name: string; quantity: st
     return { quantity: '', unit: '', name: 'to taste' };
   }
 
-  // Match leading number or fraction
-  const numMatch = trimmed.match(/^(\d+\/\d+|\d+\.?\d*)\s*/);
+  // Match leading quantity: range (1-2, 1 to 2) first, then fraction, then simple number
+  const numMatch = trimmed.match(/^(\d+\.?\d*\s*[-–—to]+\s*\d+\.?\d*|\d+\/\d+|\d+\.?\d*)\s*/);
   if (numMatch) {
     const quantity = numMatch[1].trim();
     const rest = trimmed.slice(numMatch[0].length);
@@ -70,42 +154,29 @@ export function normalizeIngredient(
 }
 
 /**
- * Parse a quantity string to a number. Returns null for non-numeric (e.g. "to taste").
+ * Parse a quantity string to a number. Returns null for fuzzy (e.g. "to taste").
  */
 export function parseQuantityToNumber(q: string): number | null {
-  const trimmed = String(q || '').trim();
-  if (!trimmed) return null;
-  if (/^to\s+taste$/i.test(trimmed)) return null;
+  const parsed = parseQuantity(String(q || '').trim());
+  return parsed.type === 'numeric' ? parsed.value : null;
+}
 
-  // Simple integer or decimal
-  const simple = trimmed.match(/^(\d+\.?\d*)$/);
-  if (simple) return parseFloat(simple[1]);
-
-  // Fraction: 1/2, 3/4, etc.
-  const frac = trimmed.match(/^(\d+)\/(\d+)$/);
-  if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
-
-  // Mixed: 1 1/2, 2 3/4
-  const mixed = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)$/);
-  if (mixed) {
-    const whole = parseInt(mixed[1], 10);
-    const num = parseInt(mixed[2], 10);
-    const den = parseInt(mixed[3], 10);
-    return whole + num / den;
-  }
-
-  // Range: 1-2, 1 to 2 - return midpoint for single-value scaling
-  const range = trimmed.match(/^(\d+\.?\d*)\s*[-–—to]+\s*(\d+\.?\d*)$/i);
-  if (range) return (parseFloat(range[1]) + parseFloat(range[2])) / 2;
-
-  return null;
+/**
+ * Parse quantity for API input (inventory, shopping list). Handles number or string.
+ * Returns 0 for invalid/fuzzy.
+ */
+export function parseQuantityToNumberOrZero(value: unknown): number {
+  if (typeof value === 'number' && !Number.isNaN(value)) return value;
+  const n = parseQuantityToNumber(String(value ?? ''));
+  return n ?? 0;
 }
 
 function parseQuantityRange(q: string): [number, number] | null {
-  const range = String(q || '').trim().match(/^(\d+\.?\d*)\s*[-–—to]+\s*(\d+\.?\d*)$/i);
-  if (range) return [parseFloat(range[1]), parseFloat(range[2])];
-  const num = parseQuantityToNumber(q);
-  return num !== null ? [num, num] : null;
+  const parsed = parseQuantity(String(q || '').trim());
+  if (parsed.type === 'numeric') {
+    return parsed.range ?? [parsed.value, parsed.value];
+  }
+  return null;
 }
 
 /** Common fractions for readable output */
@@ -148,21 +219,26 @@ function formatScaledQuantity(value: number): string {
 }
 
 /**
- * Scale an ingredient's quantity by a multiplier. Leaves "to taste" and empty quantities unchanged.
+ * Scale an ingredient's quantity by a multiplier.
+ * Leaves fuzzy ingredients (to taste, as needed, etc.) unchanged.
+ * Scales numeric quantities including count units (2 cloves -> 4 cloves).
  */
 export function scaleIngredient(
   ing: { name: string; quantity: string; unit: string },
   multiplier: number
 ): { name: string; quantity: string; unit: string } {
   if (multiplier === 1) return { ...ing };
+  if (isFuzzyIngredient(ing)) return { ...ing };
   const range = parseQuantityRange(ing.quantity);
   if (range === null) return { ...ing };
   const [a, b] = range;
-  if (a === b) {
-    return { ...ing, quantity: formatScaledQuantity(a * multiplier) };
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  if (lo === hi) {
+    return { ...ing, quantity: formatScaledQuantity(lo * multiplier) };
   }
   return {
     ...ing,
-    quantity: `${formatScaledQuantity(a * multiplier)}–${formatScaledQuantity(b * multiplier)}`,
+    quantity: `${formatScaledQuantity(lo * multiplier)}–${formatScaledQuantity(hi * multiplier)}`,
   };
 }

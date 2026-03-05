@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { getUnitMergeKey } from '@/lib/units';
-
-function parseQuantity(value: unknown): number {
-  if (typeof value === 'number' && !Number.isNaN(value)) return value;
-  if (typeof value === 'string') {
-    const n = parseFloat(value);
-    if (!Number.isNaN(n)) return n;
-    const frac = value.match(/^(\d+)\/(\d+)$/);
-    if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
-  }
-  return 0;
-}
+import { parseQuantityToNumberOrZero } from '@/lib/ingredient-parser';
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,7 +56,7 @@ export async function POST(request: NextRequest) {
       const name = String(item.name || '').trim();
       if (!name) continue;
 
-      const quantity = parseQuantity(item.quantity ?? 0);
+      const quantity = parseQuantityToNumberOrZero(item.quantity ?? 0);
       const unit = String(item.unit ?? '').trim();
       const incomingMergeKey = getUnitMergeKey(unit);
 
@@ -168,7 +158,7 @@ export async function PUT(request: NextRequest) {
     }
     if (quantity !== undefined) {
       updates.push('quantity = ?');
-      params.push(parseQuantity(quantity));
+      params.push(parseQuantityToNumberOrZero(quantity));
     }
     if (unit !== undefined) {
       updates.push('unit = ?');
