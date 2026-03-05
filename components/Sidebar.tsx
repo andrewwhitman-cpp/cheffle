@@ -112,7 +112,11 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 shrink-0 border-r border-sage-200 bg-white flex flex-col">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 px-6 border-b border-sage-100">
-        <img src="/icon.svg" alt="" width={32} height={32} className="shrink-0" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={32} height={32} className="shrink-0 rounded-md" aria-hidden>
+          <rect width="32" height="32" rx="6" fill="#dd4f32" />
+          <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
+          <rect x="9" y="11" width="14" height="12" fill="white" />
+        </svg>
         <span className="text-xl font-semibold tracking-tight text-terracotta-600">Cheffle</span>
       </div>
 

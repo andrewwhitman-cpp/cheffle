@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRef, useEffect } from 'react';
 import Sidebar from './Sidebar';
 
 interface AppLayoutProps {
@@ -21,6 +22,18 @@ export default function AppLayout({
   onSearch,
 }: AppLayoutProps) {
   const router = useRouter();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,6 +56,7 @@ export default function AppLayout({
             <form onSubmit={handleSearch} className="flex flex-1 max-w-2xl">
               <div className="relative flex w-full items-center">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   name="search"
                   placeholder={searchPlaceholder}
