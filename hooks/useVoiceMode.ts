@@ -50,6 +50,7 @@ export function useVoiceMode(options: UseVoiceModeOptions): UseVoiceModeReturn {
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const isPushToTalkRef = useRef(false);
+  const restartScheduledRef = useRef(false);
   const continuousModeRef = useRef(continuousMode);
   const voiceEnabledRef = useRef(voiceEnabled);
   const speakResponsesRef = useRef(speakResponses);
@@ -106,13 +107,15 @@ export function useVoiceMode(options: UseVoiceModeOptions): UseVoiceModeReturn {
             // Continuous: look for "Chef" keyword
             const query = parseKeywordFromTranscript(transcript);
             if (query && result.isFinal) {
+              restartScheduledRef.current = true;
               void onQueryDetectedRef.current(query, speakFn, speakResponsesRef.current);
               stopRecognition();
               setTimeout(() => {
+                restartScheduledRef.current = false;
                 if (voiceEnabledRef.current && continuousModeRef.current) {
                   startRecognition(false, true);
                 }
-              }, 500);
+              }, 800);
               return;
             }
           }
@@ -122,8 +125,13 @@ export function useVoiceMode(options: UseVoiceModeOptions): UseVoiceModeReturn {
       rec.onend = () => {
         recognitionRef.current = null;
         setIsListening(false);
-        if (voiceEnabledRef.current && continuousModeRef.current && !isPushToTalkRef.current) {
-          setTimeout(() => startRecognition(false, true), 300);
+        if (
+          !restartScheduledRef.current &&
+          voiceEnabledRef.current &&
+          continuousModeRef.current &&
+          !isPushToTalkRef.current
+        ) {
+          setTimeout(() => startRecognition(false, true), 400);
         }
       };
 
