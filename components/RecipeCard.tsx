@@ -12,10 +12,7 @@ interface Recipe {
   servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
-  image_url?: string | null;
 }
-
-const ASPECT_RATIO = 'aspect-[4/3]';
 
 export default function RecipeCard({ recipe }: { recipe: Recipe }) {
   const totalTime = recipe.prep_time + recipe.cook_time;
@@ -23,18 +20,8 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
   return (
     <Link
       href={`/recipes/${recipe.id}`}
-      className="block bg-white rounded-xl border border-sage-200 shadow-card overflow-hidden transition-all duration-200 hover:border-terracotta-200 hover:shadow-card-hover focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:ring-offset-2"
+      className="block bg-white rounded-xl border border-sage-200 shadow-card transition-all duration-200 hover:border-terracotta-200 hover:shadow-card-hover focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:ring-offset-2"
     >
-      {/* Image or gradient placeholder - consistent aspect ratio */}
-      <div className={`${ASPECT_RATIO} w-full bg-gradient-to-br from-terracotta-100 via-cream-100 to-sage-100`}>
-        {recipe.image_url ? (
-          <img
-            src={recipe.image_url}
-            alt=""
-            className="w-full h-full object-cover"
-          />
-        ) : null}
-      </div>
       <div className="p-6">
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <h3 className="text-lg font-semibold text-sage-900">{recipe.name}</h3>
