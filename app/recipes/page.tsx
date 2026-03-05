@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import RecipeCard from '@/components/RecipeCard';
 import RecipeCardSkeleton from '@/components/RecipeCardSkeleton';
@@ -20,10 +21,17 @@ interface Recipe {
   skill_level_adjusted?: string | null;
 }
 
-export default function RecipesPage() {
+function RecipesPageContent() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') ?? '';
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
+
+  // Sync search query when URL changes (e.g. from header search)
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+  }, [initialSearch]);
 
   const fetchRecipes = useCallback(async (query: string) => {
     try {
@@ -45,10 +53,10 @@ export default function RecipesPage() {
 
   const isInitialMount = useRef(true);
 
-  // Initial load
+  // Initial load (use search param from URL if present)
   useEffect(() => {
-    fetchRecipes('');
-  }, [fetchRecipes]);
+    fetchRecipes(initialSearch);
+  }, [fetchRecipes, initialSearch]);
 
   // Debounced live search when user types (skip on initial mount)
   useEffect(() => {
@@ -70,8 +78,7 @@ export default function RecipesPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold text-sage-900">Recipes</h1>
           <Link
@@ -124,6 +131,23 @@ export default function RecipesPage() {
           </div>
         )}
       </div>
+  );
+}
+
+export default function RecipesPage() {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <RecipeCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      }>
+        <RecipesPageContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }
