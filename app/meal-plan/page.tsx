@@ -101,6 +101,7 @@ export default function MealPlanPage() {
   const [error, setError] = useState('');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showShoppingModal, setShowShoppingModal] = useState(false);
+  const [shoppingScale, setShoppingScale] = useState(1);
   const [inventory, setInventory] = useState<{ id: number; name: string; quantity: number; unit: string }[]>([]);
   const [activePopover, setActivePopover] = useState<{ dateStr: string; mealType: string } | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null);
@@ -289,22 +290,6 @@ export default function MealPlanPage() {
   };
 
   const openShoppingListModal = () => {
-    const mealEntries = entries.filter((e) => e.recipe_id != null).map((e) => ({
-      id: e.id,
-      plan_date: e.plan_date,
-      meal_type: e.meal_type,
-      recipe_id: e.recipe_id,
-    }));
-    const recipeList = recipes.filter((r) =>
-      mealEntries.some((m) => m.recipe_id === r.id)
-    );
-    const invList = inventory.map((i) => ({
-      id: i.id,
-      name: i.name,
-      quantity: i.quantity,
-      unit: i.unit,
-    }));
-    const items = computeShoppingList(mealEntries, invList, recipeList);
     setShowShoppingModal(true);
   };
 
@@ -398,7 +383,7 @@ export default function MealPlanPage() {
       quantity: i.quantity,
       unit: i.unit,
     }));
-    return computeShoppingList(mealEntries, invList, recipeList);
+    return computeShoppingList(mealEntries, invList, recipeList, shoppingScale);
   })();
 
   const todayStr = formatDate(new Date());
@@ -503,6 +488,8 @@ export default function MealPlanPage() {
 
         <ShoppingListModal
           items={shoppingItems}
+          scale={shoppingScale}
+          onScaleChange={setShoppingScale}
           onSave={handleShoppingListSave}
           onSkip={handleShoppingListSkip}
           isOpen={showShoppingModal}

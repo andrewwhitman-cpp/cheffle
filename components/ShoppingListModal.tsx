@@ -11,22 +11,41 @@ export interface ShoppingListItem {
 
 interface ShoppingListModalProps {
   items: ShoppingListItem[];
+  scale: number;
+  onScaleChange: (scale: number) => void;
   onSave: (items: ShoppingListItem[]) => void;
   onSkip: () => void;
   isOpen: boolean;
 }
 
+function parseScaleInput(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const n = parseFloat(trimmed);
+  if (Number.isNaN(n)) return null;
+  const frac = trimmed.match(/^(\d+)\/(\d+)$/);
+  if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
+  return n;
+}
+
 export default function ShoppingListModal({
   items,
+  scale,
+  onScaleChange,
   onSave,
   onSkip,
   isOpen,
 }: ShoppingListModalProps) {
   const [editedItems, setEditedItems] = useState<ShoppingListItem[]>(items);
+  const [scaleInput, setScaleInput] = useState(String(scale));
 
   useEffect(() => {
     if (isOpen) setEditedItems(items);
   }, [isOpen, items]);
+
+  useEffect(() => {
+    if (isOpen) setScaleInput(String(scale));
+  }, [isOpen, scale]);
   const [saving, setSaving] = useState(false);
 
   if (!isOpen) return null;
@@ -53,6 +72,30 @@ export default function ShoppingListModal({
           <p className="text-sm text-sage-600 mt-1">
             Items to buy based on your meal plan and current inventory.
           </p>
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-xs text-sage-500">Scale:</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={scaleInput}
+              onChange={(e) => {
+                const value = e.target.value;
+                setScaleInput(value);
+                const parsed = parseScaleInput(value);
+                if (parsed !== null && parsed >= 0.1 && parsed <= 20 && parsed !== scale) {
+                  onScaleChange(parsed);
+                }
+              }}
+              onBlur={() => setScaleInput(String(scale))}
+              placeholder="1"
+              title="Scale quantities by this factor (e.g. 2 for double, 0.5 for half)"
+              className="w-14 px-2 py-0.5 text-sm border border-sage-300 rounded focus:outline-none focus:ring-1 focus:ring-terracotta-500 focus:border-terracotta-500"
+            />
+            <span className="text-xs text-sage-500">×</span>
+            <span className="text-xs text-sage-400" title="Scale quantities by this factor (e.g. 2 for double, 0.5 for half)">
+              (multiplier)
+            </span>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">

@@ -3,7 +3,7 @@
  * Aggregates recipe ingredients, subtracts inventory, returns items to buy.
  */
 
-import { parseQuantityToNumber, isFuzzyIngredient } from './ingredient-parser';
+import { parseQuantityToNumber, isFuzzyIngredient, toShoppingListName } from './ingredient-parser';
 import { findBestInventoryMatch } from './ingredient-matching';
 import {
   convertToBaseUnit,
@@ -54,11 +54,13 @@ function parseQty(q: string): number {
 
 /**
  * Compute shopping list: aggregate recipe ingredients, subtract inventory.
+ * @param scale - Multiplier for all quantities (e.g. 2 for double). Default 1.
  */
 export function computeShoppingList(
   mealPlanEntries: MealPlanEntry[],
   inventory: InventoryItem[],
-  recipes: Recipe[]
+  recipes: Recipe[],
+  scale = 1
 ): ShoppingListItem[] {
   const recipeMap = new Map(recipes.map((r) => [r.id, r]));
 
@@ -74,9 +76,6 @@ export function computeShoppingList(
     const ingredients = recipe?.ingredients;
     if (!recipe || !Array.isArray(ingredients)) continue;
 
-    // Use recipe as-is (1 meal = full recipe). Scale by servings if we add "servings to plan" later.
-    const scale = 1;
-
     for (const ing of ingredients) {
       if (isFuzzyIngredient(ing)) continue;
 
@@ -85,11 +84,14 @@ export function computeShoppingList(
 
       const scaledQty = qty * scale;
       const unit = String(ing.unit || '').trim();
-      const name = String(ing.name || '').trim();
-      if (!name) continue;
+      const rawName = String(ing.name || '').trim();
+      if (!rawName) continue;
+
+      const displayName = toShoppingListName(rawName);
+      if (!displayName) continue;
 
       const converted = convertToBaseUnit(scaledQty, unit);
-      const key = normalizeIngredientKey(name, unit);
+      const key = normalizeIngredientKey(displayName, unit);
 
       if (converted) {
         const existing = aggregated.get(key);
@@ -97,7 +99,7 @@ export function computeShoppingList(
           existing.quantityBase += converted.value;
         } else {
           aggregated.set(key, {
-            name,
+            name: displayName,
             quantityBase: converted.value,
             unit,
             category: converted.category,
@@ -111,7 +113,7 @@ export function computeShoppingList(
           existing.quantityBase += scaledQty;
         } else {
           aggregated.set(key, {
-            name,
+            name: displayName,
             quantityBase: scaledQty,
             unit,
             category: 'unknown',

@@ -56,6 +56,41 @@ export default function ShoppingListPage() {
     }
   };
 
+  const selectAll = async (purchased: 0 | 1) => {
+    if (!list || list.items.length === 0) return;
+    setUpdating(-1);
+    setError('');
+    try {
+      const updatedItems = list.items.map((i) => ({
+        ...i,
+        purchased,
+      }));
+      const res = await authFetch(`/api/shopping-lists/${list.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: updatedItems.map((i) => ({
+            id: i.id,
+            name: i.name,
+            quantity: i.quantity,
+            unit: i.unit,
+            purchased: i.purchased,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to update');
+      }
+      const data = await res.json();
+      setList(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const togglePurchased = async (item: ShoppingListItem) => {
     if (!list) return;
     setUpdating(item.id);
@@ -166,7 +201,28 @@ export default function ShoppingListPage() {
           </div>
         ) : (
           <>
-            <div className="mb-4 text-sm text-sage-600">{list.name}</div>
+            <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
+              <span className="text-sm text-sage-600">{list.name}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectAll(1)}
+                  disabled={updating !== null || purchasedCount === list.items.length}
+                  className="text-sm text-terracotta-600 hover:text-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Select all
+                </button>
+                <span className="text-sage-300">|</span>
+                <button
+                  type="button"
+                  onClick={() => selectAll(0)}
+                  disabled={updating !== null || purchasedCount === 0}
+                  className="text-sm text-terracotta-600 hover:text-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Deselect all
+                </button>
+              </div>
+            </div>
             <ul className="space-y-2 mb-8">
               {list.items.map((item) => (
                 <li
@@ -178,7 +234,7 @@ export default function ShoppingListPage() {
                   <button
                     type="button"
                     onClick={() => togglePurchased(item)}
-                    disabled={updating === item.id}
+                    disabled={updating !== null}
                     className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition ${
                       item.purchased
                         ? 'bg-terracotta-500 border-terracotta-500 text-white'

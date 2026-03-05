@@ -87,6 +87,27 @@ export function isFuzzyIngredient(ing: { name: string; quantity: string; unit: s
   return FUZZY_NAME_PHRASES.test(name);
 }
 
+/**
+ * Convert a recipe ingredient name to natural shopping list format.
+ * Strips preparation details (diced, chopped, etc.), parentheticals, and form adjectives.
+ * Example: "avocados, diced" -> "avocados"; "crumbled feta cheese" -> "feta cheese"
+ */
+export function toShoppingListName(name: string): string {
+  let s = String(name || '').trim();
+  if (!s) return '';
+
+  // Remove parentheticals: (4-6 ounce), (optional), etc.
+  s = s.replace(/\s*\([^)]*\)\s*/g, ' ');
+
+  // Remove trailing prep phrases after comma: ", diced", ", cut into bite-size chunks", etc.
+  s = s.replace(/\s*,\s*.*$/, '');
+
+  // Remove leading form adjectives: crumbled, grated, shredded, etc.
+  s = s.replace(/^(crumbled|grated|shredded|diced|chopped|minced|sliced)\s+/i, '');
+
+  return s.replace(/\s+/g, ' ').trim();
+}
+
 const UNITS = [
   'cup', 'cups', 'cu', 'tbsp', 'tablespoon', 'tablespoons', 'table', 'tables',
   'tsp', 'teaspoon', 'teaspoons', 'teasp', 'teasps',
