@@ -67,10 +67,7 @@ export default function AppLayout({
                 </kbd>
               </div>
             </form>
-            <Link
-              href="/"
-              className="flex items-center gap-2 rounded-lg bg-terracotta-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-terracotta-700 transition-colors"
-            >
+            <Link href="/" className="btn-primary">
               <span className="text-lg leading-none">+</span>
               New Recipe
             </Link>

@@ -78,30 +78,24 @@ function RecipesPageContent() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold text-sage-900">Recipes</h1>
-          <Link
-            href="/"
-            className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium"
-          >
+          <h1 className="section-heading text-2xl">Recipes</h1>
+          <Link href="/" className="text-sm link-accent">
             Add recipe from URL
           </Link>
         </div>
 
-        <form onSubmit={handleSearch} className="mb-6">
+        <form onSubmit={handleSearch} className="mb-8">
           <div className="flex gap-2">
             <input
               type="text"
               placeholder="Search recipes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
+              className="flex-1 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 transition-shadow"
             />
-            <button
-              type="submit"
-              className="px-6 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium transition"
-            >
+            <button type="submit" className="btn-primary px-6 py-2">
               Search
             </button>
           </div>
@@ -114,12 +108,9 @@ function RecipesPageContent() {
             ))}
           </div>
         ) : recipes.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-sage-300 rounded-lg">
+          <div className="text-center py-12 rounded-xl border border-dashed border-sage-300 bg-white shadow-sm">
             <p className="text-sage-600 mb-2">No recipes found.</p>
-            <Link
-              href="/"
-              className="text-terracotta-600 hover:text-terracotta-700 font-medium"
-            >
+            <Link href="/" className="link-accent">
               Add a recipe from URL →
             </Link>
           </div>
@@ -138,7 +129,7 @@ export default function RecipesPage() {
   return (
     <ProtectedRoute>
       <Suspense fallback={
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <RecipeCardSkeleton key={i} />

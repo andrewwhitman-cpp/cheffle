@@ -149,7 +149,7 @@ function RegisterForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-terracotta-600 hover:bg-terracotta-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="btn-primary w-full justify-center py-3 px-4 text-base"
               >
                 {loading ? 'Creating account...' : 'Create account'}
               </button>

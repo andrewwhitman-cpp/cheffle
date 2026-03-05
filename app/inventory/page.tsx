@@ -205,7 +205,7 @@ export default function InventoryPage() {
                 <button
                   type="button"
                   onClick={handleDeleteConfirm}
-                  className="px-4 py-2 bg-coral-600 text-white rounded-lg hover:bg-coral-700 font-medium"
+                  className="btn-danger px-4 py-2"
                 >
                   Remove
                 </button>
@@ -244,7 +244,7 @@ export default function InventoryPage() {
             <button
               type="submit"
               disabled={adding || !newName.trim()}
-              className="px-6 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+              className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {adding ? 'Adding...' : 'Add'}
             </button>
@@ -292,7 +292,7 @@ export default function InventoryPage() {
                       />
                       <button
                         type="submit"
-                        className="px-3 py-1.5 bg-terracotta-600 text-white rounded text-sm font-medium hover:bg-terracotta-700"
+                        className="btn-primary px-3 py-1.5 text-sm"
                       >
                         Save
                       </button>

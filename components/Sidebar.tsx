@@ -132,10 +132,10 @@ export default function Sidebar() {
                 <Link
                   href={link.href}
                   prefetch={link.href === '/' ? false : undefined}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-3 text-sm font-medium transition-colors ${
                     active
-                      ? 'bg-terracotta-50 text-terracotta-700'
-                      : 'text-sage-600 hover:bg-sage-50 hover:text-sage-900'
+                      ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
+                      : 'border-transparent text-sage-600 hover:bg-sage-50 hover:text-sage-900'
                   }`}
                 >
                   <Icon />
@@ -155,10 +155,10 @@ export default function Sidebar() {
                 <Link
                   href={link.href}
                   prefetch={link.href === '/meal-plan' ? false : undefined}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-3 text-sm font-medium transition-colors ${
                     active
-                      ? 'bg-terracotta-50 text-terracotta-700'
-                      : 'text-sage-600 hover:bg-sage-50 hover:text-sage-900'
+                      ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
+                      : 'border-transparent text-sage-600 hover:bg-sage-50 hover:text-sage-900'
                   }`}
                 >
                   {KITCHEN_ICONS[link.label] ?? <BookmarkIcon />}

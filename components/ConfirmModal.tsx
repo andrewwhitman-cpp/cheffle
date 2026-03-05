@@ -23,10 +23,7 @@ export default function ConfirmModal({
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
-  const confirmButtonClass =
-    variant === 'danger'
-      ? 'px-4 py-2 bg-coral-600 text-white rounded-lg hover:bg-coral-700 font-medium'
-      : 'px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium';
+  const confirmButtonClass = variant === 'danger' ? 'btn-danger' : 'btn-primary';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-sage-900/50">
@@ -44,11 +41,7 @@ export default function ConfirmModal({
           {message}
         </p>
         <div className="flex gap-3 justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 font-medium"
-          >
+          <button type="button" onClick={onClose} className="btn-secondary">
             {cancelLabel}
           </button>
           <button

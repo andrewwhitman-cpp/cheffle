@@ -413,7 +413,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="px-6 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium transition-colors"
+                  className="btn-primary px-6 py-2"
                 >
                   Next
                 </button>
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleFinish}
                   disabled={saving}
-                  className="px-6 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? 'Saving...' : 'Finish'}
                 </button>

@@ -326,7 +326,7 @@ export default function CookPage() {
                 </button>
                 <button
                   onClick={goNext}
-                  className="px-6 py-3 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 transition text-sm font-medium"
+                  className="btn-primary px-6 py-3 text-sm"
                 >
                   {isLast ? 'Done cooking' : 'Next'}
                 </button>
@@ -445,7 +445,7 @@ export default function CookPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleApplyChanges}
-                    className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 text-sm font-medium"
+                    className="btn-primary px-4 py-2 text-sm"
                   >
                     Use these changes
                   </button>
@@ -481,7 +481,7 @@ export default function CookPage() {
               <button
                 type="submit"
                 disabled={chatLoading || !chatInput.trim()}
-                className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                className="btn-primary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Send
               </button>

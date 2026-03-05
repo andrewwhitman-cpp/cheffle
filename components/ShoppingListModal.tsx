@@ -93,7 +93,7 @@ export default function ShoppingListModal({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 font-medium"
+            className="btn-primary px-4 py-2 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save shopping list'}
           </button>

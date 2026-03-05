@@ -387,21 +387,15 @@ export default function RecipeDetailPage() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Link
-                  href={`/recipes/${recipe.id}/cook`}
-                  className="px-4 py-2 bg-sage-600 text-white rounded-lg hover:bg-sage-700 transition text-sm font-medium"
-                >
+                <Link href={`/recipes/${recipe.id}/cook`} className="btn-primary px-4 py-2 text-sm">
                   Start cooking
                 </Link>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 transition text-sm font-medium"
-                >
+                <button onClick={() => setIsEditing(true)} className="btn-secondary px-4 py-2 text-sm">
                   Edit
                 </button>
                 <button
                   onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 border border-coral-300 text-coral-700 rounded-lg hover:bg-coral-50 transition text-sm font-medium"
+                  className="btn-danger px-4 py-2 text-sm"
                 >
                   Delete
                 </button>
@@ -586,7 +580,7 @@ export default function RecipeDetailPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleApplyChanges}
-                    className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 text-sm font-medium"
+                    className="btn-primary px-4 py-2 text-sm"
                   >
                     Use these changes
                   </button>
@@ -612,7 +606,7 @@ export default function RecipeDetailPage() {
               <button
                 type="submit"
                 disabled={chatLoading || !chatInput.trim()}
-                className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                className="btn-primary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Send
               </button>
@@ -748,7 +742,7 @@ export default function RecipeDetailPage() {
             <div className="flex gap-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium"
+                className="btn-primary px-6 py-2"
               >
                 Save
               </button>
@@ -758,7 +752,7 @@ export default function RecipeDetailPage() {
                   setIsEditing(false);
                   fetchRecipe();
                 }}
-                className="px-6 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 font-medium"
+                className="btn-secondary px-6 py-2"
               >
                 Cancel
               </button>

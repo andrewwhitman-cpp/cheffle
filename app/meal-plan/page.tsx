@@ -478,7 +478,7 @@ export default function MealPlanPage() {
                 <button
                   type="button"
                   onClick={handleCreateShoppingList}
-                  className="w-full px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium"
+                  className="btn-primary w-full px-4 py-2"
                 >
                   Create shopping list
                 </button>
@@ -542,7 +542,7 @@ export default function MealPlanPage() {
             <button
               type="button"
               onClick={dirty ? handleSaveClick : openShoppingListModal}
-              className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 font-medium"
+              className="btn-primary px-4 py-2"
             >
               {dirty ? 'Save meal plan' : 'Create shopping list'}
             </button>

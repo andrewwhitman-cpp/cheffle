@@ -234,7 +234,7 @@ export default function ProfilePage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {saving ? 'Saving...' : 'Save'}
                     </button>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
                     <button
                       type="submit"
                       disabled={passwordSaving}
-                      className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {passwordSaving ? 'Updating...' : 'Update password'}
                     </button>
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </button>
@@ -532,7 +532,7 @@ export default function ProfilePage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="bg-terracotta-600 text-white px-6 py-2 rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </button>

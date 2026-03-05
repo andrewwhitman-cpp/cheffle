@@ -14,6 +14,55 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Unified button styles */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white
+      bg-terracotta-600 shadow-sm
+      hover:bg-terracotta-700 hover:shadow
+      focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm
+      transition-all duration-200;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium
+      border border-sage-300 text-sage-700 bg-white
+      hover:bg-sage-50 hover:border-sage-400
+      focus:outline-none focus:ring-2 focus:ring-sage-400 focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed
+      transition-all duration-200;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-sage-700
+      hover:bg-sage-50
+      focus:outline-none focus:ring-2 focus:ring-sage-400 focus:ring-offset-2
+      transition-all duration-200;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white
+      bg-coral-600
+      hover:bg-coral-700
+      focus:outline-none focus:ring-2 focus:ring-coral-500 focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed
+      transition-all duration-200;
+  }
+  .card-base {
+    @apply rounded-xl border border-sage-200 bg-white p-6 shadow-sm transition-shadow duration-200;
+  }
+  .card-hover {
+    @apply hover:shadow-md;
+  }
+  .section-heading {
+    @apply text-xl font-semibold text-sage-900;
+  }
+  .card-label {
+    @apply text-xs font-semibold uppercase tracking-wider text-sage-500;
+  }
+  .link-accent {
+    @apply text-terracotta-600 hover:text-terracotta-700 font-medium transition-colors;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

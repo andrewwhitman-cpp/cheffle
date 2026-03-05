@@ -229,7 +229,7 @@ export default function DashboardContent() {
 
   return (
     <ProtectedRoute>
-      <div className="px-6 py-8">
+      <div className="px-6 py-8 max-w-6xl mx-auto">
         {/* Add recipe section */}
         <div className="mb-8">
           <form onSubmit={handleParse} className="flex gap-2">
@@ -238,14 +238,14 @@ export default function DashboardContent() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="Paste recipe URL (e.g. allrecipes.com, bonappetit.com)"
-              className="flex-1 px-4 py-3 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white"
+              className="flex-1 px-4 py-3 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white transition-shadow"
               disabled={parsing}
             />
             <button
               type="submit"
               disabled={parsing || !url.trim()}
               title={!url.trim() ? 'Paste a recipe URL above to add it' : undefined}
-              className="px-6 py-3 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+              className="btn-primary px-6 py-3"
             >
               {parsing ? 'Parsing...' : 'Add recipe'}
             </button>
@@ -256,7 +256,7 @@ export default function DashboardContent() {
             </div>
           )}
           {preview && (
-            <div className="mt-4 p-6 bg-white border border-sage-200 rounded-lg shadow-sm">
+            <div className="mt-4 card-base">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <h3 className="text-lg font-semibold text-sage-900">{preview.name}</h3>
                 {preview.skill_level_adjusted && (
@@ -272,17 +272,10 @@ export default function DashboardContent() {
                 <p className="text-sm text-sage-500 mb-2">Serves {preview.servings}</p>
               )}
               <div className="flex gap-2 mt-4">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-4 py-2 bg-terracotta-600 text-white rounded-lg hover:bg-terracotta-700 disabled:opacity-50 transition"
-                >
+                <button onClick={handleSave} disabled={saving} className="btn-primary">
                   {saving ? 'Saving...' : 'Save to my recipes'}
                 </button>
-                <button
-                  onClick={handleCancelPreview}
-                  className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 transition"
-                >
+                <button type="button" onClick={handleCancelPreview} className="btn-secondary">
                   Cancel
                 </button>
               </div>
@@ -293,8 +286,8 @@ export default function DashboardContent() {
         {/* Dashboard widget cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Today's meals card */}
-          <div className="rounded-xl border border-sage-200 bg-sage-50/50 p-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-sage-500 mb-3">Today&apos;s meals</p>
+          <div className="card-base border-l-4 border-l-terracotta-200">
+            <p className="card-label mb-3">Today&apos;s meals</p>
             {loadingMeals ? (
               <SectionSkeleton lines={3} />
             ) : (
@@ -322,16 +315,16 @@ export default function DashboardContent() {
                     );
                   })
                 )}
-                <Link href="/meal-plan" className="mt-3 inline-block text-xs text-terracotta-600 hover:text-terracotta-700 font-medium">
+                <Link href="/meal-plan" className="mt-3 inline-block text-xs link-accent">
                   View meal plan →
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Cooking skill level card */}
-          <div className="rounded-xl border border-sage-200 bg-sage-700 p-6 text-white">
-            <p className="text-xs font-semibold uppercase tracking-wider text-sage-300 mb-3">Cooking skill level</p>
+          {/* Cooking skill level card - sage accent */}
+          <div className="rounded-xl border border-sage-600 bg-sage-700 p-6 text-white shadow-sm">
+            <p className="card-label mb-3 text-sage-300">Cooking skill level</p>
             {loadingProfile ? (
               <div className="h-12 bg-sage-600/50 rounded animate-pulse" />
             ) : skillLevel ? (
@@ -339,14 +332,14 @@ export default function DashboardContent() {
             ) : (
               <p className="text-sage-300">Not set</p>
             )}
-            <Link href="/profile" className="mt-3 inline-block text-xs text-sage-200 hover:text-white font-medium">
+            <Link href="/profile" className="mt-3 inline-block text-xs text-sage-200 hover:text-white font-medium transition-colors">
               Set in profile →
             </Link>
           </div>
 
           {/* Daily goal / Shopping list card */}
-          <div className="rounded-xl border border-sage-200 bg-cream-200/80 p-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-sage-600 mb-3">Daily goal</p>
+          <div className="card-base border-l-4 border-l-cream-400">
+            <p className="card-label mb-3 text-sage-600">Daily goal</p>
             {loadingShopping ? (
               <SectionSkeleton lines={2} />
             ) : unpurchasedItems.length === 0 && shoppingList ? (
@@ -365,7 +358,7 @@ export default function DashboardContent() {
             ) : (
               <p className="text-sage-600 text-sm">No shopping list yet</p>
             )}
-            <Link href="/shopping-list" className="mt-3 inline-block text-xs text-terracotta-600 hover:text-terracotta-700 font-medium">
+            <Link href="/shopping-list" className="mt-3 inline-block text-xs link-accent">
               View list →
             </Link>
           </div>
@@ -374,8 +367,8 @@ export default function DashboardContent() {
         {/* Recommended for You */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-sage-900">Recommended for You</h2>
-            <Link href="/recipes" className="text-sm text-terracotta-600 hover:text-terracotta-700 font-medium">
+            <h2 className="section-heading">Recommended for You</h2>
+            <Link href="/recipes" className="text-sm link-accent">
               View all
             </Link>
           </div>
@@ -386,7 +379,7 @@ export default function DashboardContent() {
               ))}
             </div>
           ) : recommendedRecipes.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-sage-300 bg-sage-50/50 p-12 text-center">
+            <div className="rounded-xl border border-dashed border-sage-300 bg-white p-12 text-center shadow-sm">
               <p className="text-sage-600 mb-2">No recipes yet.</p>
               <p className="text-sm text-sage-500">Add a recipe from a URL above to get started.</p>
             </div>
