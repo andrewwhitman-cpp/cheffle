@@ -91,6 +91,7 @@ lerna-debug.log*
 
 # Security: test credentials and sensitive docs
 TEST_ACCOUNT.md
+PROJECT_PLAN.md
 *credentials*
 *secrets*
 *.key
@@ -112,3 +113,6 @@ TEST_ACCOUNT.md
 # Optional: ignore if you don't want to commit these
 # package-lock.json
 # pnpm-lock.yaml
+
+# internal release files
+release_notes/
