@@ -110,3 +110,6 @@ TEST_ACCOUNT.md
 # Optional: ignore if you don't want to commit these
 # package-lock.json
 # pnpm-lock.yaml
+
+# internal release files
+release_notes/
