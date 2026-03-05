@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { useRecipeChat } from '@/hooks/useRecipeChat';
+import { useVoiceMode } from '@/hooks/useVoiceMode';
 import ConfirmConsumptionModal from '@/components/ConfirmConsumptionModal';
 
 interface RecipeIngredient {
@@ -43,6 +44,62 @@ export default function CookPage() {
     chatLoading,
     setChatLoading,
   } = useRecipeChat(params.id as string);
+
+  const handleVoiceQuery = useCallback(
+    async (query: string) => {
+      if (!recipe || !params.id) return;
+      setChatMessages((prev) => [...prev, { role: 'user', content: query }]);
+      setChatLoading(true);
+      setPendingRecipe(null);
+      const steps = parseInstructionsToSteps(recipe.instructions);
+      const stepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
+      const currentStep = steps[stepIndex] || '';
+      try {
+        const res = await authFetch(`/api/recipes/${params.id}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: query,
+            history: chatMessages,
+            cookingContext: {
+              currentStepIndex: stepIndex,
+              currentStepText: currentStep,
+              totalSteps: steps.length,
+              ingredients: recipe.ingredients || [],
+            },
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to get response');
+        setChatMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
+        return data.message;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Something went wrong';
+        setChatMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${msg}` }]);
+        return null;
+      } finally {
+        setChatLoading(false);
+      }
+    },
+    [recipe, params.id, chatMessages, currentStepIndex]
+  );
+
+  const {
+    voiceEnabled,
+    setVoiceEnabled,
+    isVoiceSupported,
+    isListening,
+    startListening,
+    stopListening,
+    speakResponses,
+    setSpeakResponses,
+  } = useVoiceMode({
+    onQueryDetected: async (query, speak, speakEnabled) => {
+      const response = await handleVoiceQuery(query);
+      if (response && speakEnabled) speak(response);
+    },
+    continuousMode: true,
+  });
 
   const steps = recipe ? parseInstructionsToSteps(recipe.instructions) : [];
   const stepIndex = steps.length > 0 ? Math.max(0, Math.min(currentStepIndex, steps.length - 1)) : 0;
@@ -115,12 +172,20 @@ export default function CookPage() {
     setPendingRecipe(null);
 
     try {
+      const stepsForChat = parseInstructionsToSteps(recipe.instructions);
+      const stepIdx = Math.max(0, Math.min(currentStepIndex, stepsForChat.length - 1));
       const res = await authFetch(`/api/recipes/${params.id}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
           history: chatMessages,
+          cookingContext: {
+            currentStepIndex: stepIdx,
+            currentStepText: stepsForChat[stepIdx] || '',
+            totalSteps: stepsForChat.length,
+            ingredients: recipe.ingredients || [],
+          },
         }),
       });
 
@@ -271,10 +336,69 @@ export default function CookPage() {
 
           {/* Right: AI Chat */}
           <div className="bg-white rounded-lg border border-sage-200 p-6 flex flex-col lg:h-[calc(100vh-8rem)] lg:sticky lg:top-4">
-            <h2 className="text-lg font-medium text-sage-900 mb-1">Talk with Cheffle</h2>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h2 className="text-lg font-medium text-sage-900">Talk with Cheffle</h2>
+              {isVoiceSupported && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVoiceEnabled(!voiceEnabled)}
+                    title={voiceEnabled ? 'Disable voice mode' : 'Enable voice mode'}
+                    className={`p-2 rounded-lg transition ${
+                      voiceEnabled ? 'bg-terracotta-100 text-terracotta-700' : 'bg-sage-100 text-sage-600 hover:bg-sage-200'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M12 2a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                      <path d="M4 10a8 8 0 0 0 16 0v2a8 8 0 0 1-16 0V10z" />
+                    </svg>
+                  </button>
+                  {voiceEnabled && (
+                    <label className="flex items-center gap-1.5 text-xs text-sage-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={speakResponses}
+                        onChange={(e) => setSpeakResponses(e.target.checked)}
+                        className="rounded border-sage-300"
+                      />
+                      Speak
+                    </label>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="text-sm text-sage-600 mb-4">
               I&apos;m here to help! Ask me to tweak this recipe—add rice, make it vegetarian, double it, or anything else you have in mind.
             </p>
+            {voiceEnabled && (
+              <div className="mb-4 p-3 bg-terracotta-50 border border-terracotta-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  {isListening && (
+                    <span className="w-2 h-2 rounded-full bg-terracotta-500 animate-pulse shrink-0" aria-hidden />
+                  )}
+                  <p className="text-sm text-terracotta-800 flex-1">
+                    {isListening
+                      ? 'Listening... Say "Chef" then your question.'
+                      : 'Say "Chef" then your question, or tap the mic to speak.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={chatLoading}
+                    className="p-2 rounded-lg bg-white border border-terracotta-300 text-terracotta-700 hover:bg-terracotta-50 disabled:opacity-50 shrink-0"
+                    title={isListening ? 'Stop listening' : 'Tap to speak'}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M12 2a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                      <path d="M4 10a8 8 0 0 0 16 0v2a8 8 0 0 1-16 0V10z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+            {!isVoiceSupported && (
+              <p className="text-xs text-sage-500 mb-2">Voice mode is not supported in this browser. Use Chrome or Safari for hands-free help.</p>
+            )}
 
             <div className="space-y-3 mb-4 flex-1 min-h-0 overflow-y-auto">
               {chatMessages.length === 0 && !chatLoading && (

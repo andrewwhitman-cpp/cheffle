@@ -56,6 +56,8 @@ Rules for modifications:
 
 If the user is just asking a question (not requesting changes), respond in a friendly, helpful way but do NOT include a recipe block. Keep your tone warm and encouraging.`;
 
+const COOKING_MODE_PROMPT = `IMPORTANT - You are in COOKING MODE. The user is actively cooking and may be using voice. Be extremely concise (1–3 sentences). Answer questions about ingredients, quantities, or the current step. For instructions, give brief explanations when asked. Use their skill level and kitchen context when relevant. Do NOT return recipe modifications unless the user explicitly asks to change the recipe.`;
+
 const SKILL_LEVEL_INSTRUCTIONS: Record<string, string> = {
   new_to_cooking: `IMPORTANT - The user is a NEW COOK. When you modify the recipe, also apply these adjustments: add explicit prep steps (cutting, chopping), reorder steps for timing, explain cooking terms in parentheses, add brief safety notes, include timing cues, and suggest simpler alternatives where helpful.`,
   comfortable_with_cooking: `IMPORTANT - The user is a COMFORTABLE COOK. When you modify the recipe, also: add prep steps for ingredients, ensure logical step order, briefly explain less common terms, add timing hints for longer steps.`,
@@ -88,7 +90,16 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { message, history = [] } = body as { message: string; history?: ChatMessage[] };
+    const { message, history = [], cookingContext } = body as {
+      message: string;
+      history?: ChatMessage[];
+      cookingContext?: {
+        currentStepIndex: number;
+        currentStepText: string;
+        totalSteps: number;
+        ingredients: Array<{ name: string; quantity: string; unit: string }>;
+      };
+    };
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
@@ -142,7 +153,11 @@ Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min${reci
     const kitchenInstruction = formatKitchenContextForAI(kitchenContext)
       ? `\n\n${formatKitchenContextForAI(kitchenContext)}`
       : '';
-    const systemPrompt = BASE_SYSTEM_PROMPT + skillInstruction + kitchenInstruction;
+    const cookingModeInstruction =
+      cookingContext && typeof cookingContext === 'object'
+        ? `\n\n${COOKING_MODE_PROMPT}\n\nCurrent step (${(cookingContext.currentStepIndex ?? 0) + 1} of ${cookingContext.totalSteps ?? 1}): "${cookingContext.currentStepText || ''}"`
+        : '';
+    const systemPrompt = BASE_SYSTEM_PROMPT + cookingModeInstruction + skillInstruction + kitchenInstruction;
 
     const openai = getOpenAIClient();
 
