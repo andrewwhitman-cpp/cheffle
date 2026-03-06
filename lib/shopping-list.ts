@@ -12,6 +12,7 @@ import {
   type UnitCategory,
 } from './unit-conversion';
 import { getUnitMergeKey } from './units';
+import { getPurchaseCategory, toShoppingUnit } from './shopping-units';
 
 export interface MealPlanEntry {
   id: number;
@@ -91,7 +92,8 @@ export function computeShoppingList(
       if (!displayName) continue;
 
       const converted = convertToBaseUnit(scaledQty, unit);
-      const key = normalizeIngredientKey(displayName, unit);
+      const purchaseCat = converted && getPurchaseCategory(displayName);
+      const key = purchaseCat ? `${displayName.toLowerCase().trim()}::purchase` : normalizeIngredientKey(displayName, unit);
 
       if (converted) {
         const existing = aggregated.get(key);
@@ -134,13 +136,17 @@ export function computeShoppingList(
     );
 
     if (!match) {
-      const displayQty = agg.category !== 'unknown'
-        ? (convertFromBaseUnit(agg.quantityBase, agg.unit, agg.category) ?? agg.quantityBase)
-        : agg.quantityBase;
+      const shopping = toShoppingUnit(agg.name, agg.quantityBase, agg.category, agg.unit);
+      const displayQty = shopping
+        ? shopping.quantity
+        : agg.category !== 'unknown'
+          ? (convertFromBaseUnit(agg.quantityBase, agg.unit, agg.category) ?? agg.quantityBase)
+          : agg.quantityBase;
+      const displayUnit = shopping ? shopping.unit : agg.unit;
       toBuy.push({
         name: agg.name,
         quantity: displayQty,
-        unit: agg.unit,
+        unit: displayUnit,
         from_recipe_id: agg.from_recipe_id,
       });
       continue;
@@ -148,13 +154,17 @@ export function computeShoppingList(
 
     const inv = match.inventoryItem;
     if (!areUnitsCompatible(inv.unit, agg.unit)) {
-      const displayQty = agg.category !== 'unknown'
-        ? (convertFromBaseUnit(agg.quantityBase, agg.unit, agg.category) ?? agg.quantityBase)
-        : agg.quantityBase;
+      const shopping = toShoppingUnit(agg.name, agg.quantityBase, agg.category, agg.unit);
+      const displayQty = shopping
+        ? shopping.quantity
+        : agg.category !== 'unknown'
+          ? (convertFromBaseUnit(agg.quantityBase, agg.unit, agg.category) ?? agg.quantityBase)
+          : agg.quantityBase;
+      const displayUnit = shopping ? shopping.unit : agg.unit;
       toBuy.push({
         name: agg.name,
         quantity: displayQty,
-        unit: agg.unit,
+        unit: displayUnit,
         from_recipe_id: agg.from_recipe_id,
       });
       continue;
@@ -175,14 +185,17 @@ export function computeShoppingList(
     }
     if (remainingBase <= 0) continue;
 
-    const displayQty =
-      agg.category !== 'unknown'
+    const shopping = toShoppingUnit(agg.name, remainingBase, agg.category, agg.unit);
+    const displayQty = shopping
+      ? shopping.quantity
+      : agg.category !== 'unknown'
         ? (convertFromBaseUnit(remainingBase, agg.unit, agg.category) ?? remainingBase)
         : remainingBase;
+    const displayUnit = shopping ? shopping.unit : agg.unit;
     toBuy.push({
       name: agg.name,
       quantity: displayQty,
-      unit: agg.unit,
+      unit: displayUnit,
       from_recipe_id: agg.from_recipe_id,
     });
   }
