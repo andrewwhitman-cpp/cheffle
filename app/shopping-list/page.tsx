@@ -5,6 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { simplifyForDisplay } from '@/lib/unit-simplify';
 
 interface ShoppingListItem {
   id: number;
@@ -32,9 +33,22 @@ export default function ShoppingListPage() {
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState<number | null>(null);
   const [addingToInventory, setAddingToInventory] = useState(false);
+  const [unitPreference, setUnitPreference] = useState<'imperial' | 'metric'>('metric');
 
   useEffect(() => {
     fetchList();
+  }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const res = await authFetch('/api/profile');
+      if (res.ok) {
+        const data = await res.json();
+        const pref = data?.unit_preference;
+        if (pref === 'imperial' || pref === 'metric') setUnitPreference(pref);
+      }
+    };
+    fetchProfile();
   }, []);
 
   const fetchList = async () => {
@@ -128,13 +142,14 @@ export default function ShoppingListPage() {
   };
 
   const formatItem = (item: ShoppingListItem) => {
-    const parts = [item.quantity, item.unit, item.name].filter(Boolean);
+    const { quantity, unit } = simplifyForDisplay(item.quantity, item.unit, unitPreference);
+    const parts = [quantity, unit, item.name].filter(Boolean);
     return parts.join(' ');
   };
 
   const purchasedCount = list?.items.filter((i) => i.purchased).length ?? 0;
 
-  const handleAddToInventory = async () => {
+  const doAddToInventory = async () => {
     if (!list) return;
     setAddingToInventory(true);
     setError('');
@@ -158,6 +173,11 @@ export default function ShoppingListPage() {
     } finally {
       setAddingToInventory(false);
     }
+  };
+
+  const handleAddToInventory = () => {
+    if (!list) return;
+    doAddToInventory();
   };
 
   return (

@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    await db.run(
+      'DELETE FROM inventory WHERE user_id = ? AND quantity < 0.02',
+      user.id
+    );
     const items = (await db.all(
       'SELECT id, user_id, name, quantity, unit, created_at, updated_at FROM inventory WHERE user_id = ? ORDER BY name ASC',
       user.id
@@ -68,24 +72,33 @@ export async function POST(request: NextRequest) {
 
       if (existing) {
         const newQuantity = existing.quantity + quantity;
-        await db.run(
-          'UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-          newQuantity,
-          existing.id,
-          user.id
-        );
-        const row = (await db.get('SELECT id, user_id, name, quantity, unit, created_at, updated_at FROM inventory WHERE id = ?', existing.id)) as {
-          id: number;
-          user_id: number;
-          name: string;
-          quantity: number;
-          unit: string;
-          created_at: string;
-          updated_at: string;
-        };
-        created.push(row);
-        const idx = existingItems.findIndex((e) => e.id === existing.id);
-        if (idx >= 0) existingItems[idx].quantity = newQuantity;
+        const isDepleted = newQuantity <= 0 || newQuantity < 0.02;
+        if (isDepleted) {
+          await db.run('DELETE FROM inventory WHERE id = ? AND user_id = ?', existing.id, user.id);
+          const idx = existingItems.findIndex((e) => e.id === existing.id);
+          if (idx >= 0) existingItems.splice(idx, 1);
+        } else {
+          await db.run(
+            'UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            newQuantity,
+            existing.id,
+            user.id
+          );
+          const idx = existingItems.findIndex((e) => e.id === existing.id);
+          if (idx >= 0) existingItems[idx].quantity = newQuantity;
+        }
+        if (!isDepleted) {
+          const row = (await db.get('SELECT id, user_id, name, quantity, unit, created_at, updated_at FROM inventory WHERE id = ?', existing.id)) as {
+            id: number;
+            user_id: number;
+            name: string;
+            quantity: number;
+            unit: string;
+            created_at: string;
+            updated_at: string;
+          };
+          created.push(row);
+        }
       } else {
         const result = await db.run(
           `INSERT INTO inventory (user_id, name, quantity, unit) VALUES (?, ?, ?, ?)`,
@@ -156,9 +169,11 @@ export async function PUT(request: NextRequest) {
       updates.push('name = ?');
       params.push(String(name).trim());
     }
+    let newQuantity: number | undefined;
     if (quantity !== undefined) {
+      newQuantity = parseQuantityToNumberOrZero(quantity);
       updates.push('quantity = ?');
-      params.push(parseQuantityToNumberOrZero(quantity));
+      params.push(newQuantity);
     }
     if (unit !== undefined) {
       updates.push('unit = ?');
@@ -176,6 +191,12 @@ export async function PUT(request: NextRequest) {
         updated_at: string;
       };
       return NextResponse.json(row);
+    }
+
+    const isDepleted = newQuantity !== undefined && (newQuantity <= 0 || newQuantity < 0.02);
+    if (isDepleted) {
+      await db.run('DELETE FROM inventory WHERE id = ? AND user_id = ?', id, user.id);
+      return NextResponse.json({ deleted: true });
     }
 
     updates.push('updated_at = CURRENT_TIMESTAMP');

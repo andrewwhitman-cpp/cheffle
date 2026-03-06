@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     const row = (await db.get(
-      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, onboarding_complete, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, unit_preference, natural_units, onboarding_complete, created_at FROM users WHERE id = ?',
       user.id
     )) as {
       id: number;
@@ -26,6 +26,8 @@ export async function GET(request: NextRequest) {
       dietary_preferences: string | null;
       skill_level: string | null;
       kitchen_context: string | null;
+      unit_preference: string | null;
+      natural_units: number | null;
       onboarding_complete: number | null;
       created_at: string;
     };
@@ -59,6 +61,8 @@ export async function GET(request: NextRequest) {
       ...row,
       dietary_preferences: dietaryPrefs,
       kitchen_context: kitchenContext,
+      unit_preference: row.unit_preference || 'metric',
+      natural_units: row.natural_units != null ? Boolean(row.natural_units) : false,
       onboarding_complete: row.onboarding_complete != null ? Boolean(row.onboarding_complete) : true,
     });
   } catch (error: any) {
@@ -83,7 +87,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { display_name, dietary_preferences, skill_level, kitchen_context, onboarding_complete } = body;
+    const { display_name, dietary_preferences, skill_level, kitchen_context, unit_preference, natural_units, onboarding_complete } = body;
 
     const dietaryStr =
       dietary_preferences != null
@@ -106,30 +110,40 @@ export async function PUT(request: NextRequest) {
       : null;
 
     const onboardingCompleteValue = onboarding_complete === true ? 1 : null;
+    const validUnitPrefs = ['imperial', 'metric'];
+    const unitPrefValue =
+      unit_preference != null && validUnitPrefs.includes(String(unit_preference))
+        ? String(unit_preference)
+        : null;
+    const naturalUnitsValue = natural_units === true ? 1 : 0;
 
     if (onboardingCompleteValue !== null) {
       await db.run(
-        'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ?, onboarding_complete = ? WHERE id = ?',
+        'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ?, unit_preference = ?, natural_units = ?, onboarding_complete = ? WHERE id = ?',
         display_name != null ? String(display_name) : null,
         dietaryStr,
         skillLevelValue,
         kitchenContextStr,
+        unitPrefValue,
+        naturalUnitsValue,
         onboardingCompleteValue,
         user.id
       );
     } else {
       await db.run(
-        'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ? WHERE id = ?',
+        'UPDATE users SET display_name = ?, dietary_preferences = ?, skill_level = ?, kitchen_context = ?, unit_preference = ?, natural_units = ? WHERE id = ?',
         display_name != null ? String(display_name) : null,
         dietaryStr,
         skillLevelValue,
         kitchenContextStr,
+        unitPrefValue,
+        naturalUnitsValue,
         user.id
       );
     }
 
     const row = (await db.get(
-      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, onboarding_complete, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, display_name, dietary_preferences, skill_level, kitchen_context, unit_preference, natural_units, onboarding_complete, created_at FROM users WHERE id = ?',
       user.id
     )) as {
       id: number;
@@ -139,6 +153,8 @@ export async function PUT(request: NextRequest) {
       dietary_preferences: string | null;
       skill_level: string | null;
       kitchen_context: string | null;
+      unit_preference: string | null;
+      natural_units: number | null;
       onboarding_complete: number | null;
       created_at: string;
     };
@@ -165,6 +181,8 @@ export async function PUT(request: NextRequest) {
       ...row,
       dietary_preferences: dietaryPrefs,
       kitchen_context: kitchenContext,
+      unit_preference: row.unit_preference || 'metric',
+      natural_units: row.natural_units != null ? Boolean(row.natural_units) : false,
       onboarding_complete: row.onboarding_complete != null ? Boolean(row.onboarding_complete) : true,
     });
   } catch (error: any) {

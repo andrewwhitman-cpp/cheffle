@@ -2,20 +2,39 @@
  * Unit conversion for ingredients.
  * Supports volume (cups, tbsp, tsp, ml) and weight (oz, lb, g, kg).
  * Cross-type conversion (volume ↔ weight) requires density and is not implemented.
+ *
+ * US volume factors preserve exact relationships: 1 fl oz = 2 tbsp, 1 cup = 8 fl oz.
+ * Source: NIST (1 US fl oz = 29.5735295625 ml, 1 US tbsp = 14.78676478125 ml).
  */
-
 export type UnitCategory = 'volume' | 'weight' | 'count' | 'unknown';
 
+const ML_PER_FL_OZ = 29.5735295625;
+const ML_PER_TBSP = 14.78676478125; // 1/2 fl oz exactly
+const ML_PER_TSP = 4.92892159375;   // 1/6 fl oz
+const ML_PER_CUP = 236.5882365;     // 8 fl oz
+
 const VOLUME_TO_ML: Record<string, number> = {
-  cup: 236.588,
-  cups: 236.588,
-  tbsp: 14.787,
-  tablespoon: 14.787,
-  tablespoons: 14.787,
-  tsp: 4.929,
-  teaspoon: 4.929,
-  teaspoons: 4.929,
+  cup: ML_PER_CUP,
+  cups: ML_PER_CUP,
+  tbsp: ML_PER_TBSP,
+  tablespoon: ML_PER_TBSP,
+  tablespoons: ML_PER_TBSP,
+  tsp: ML_PER_TSP,
+  teaspoon: ML_PER_TSP,
+  teaspoons: ML_PER_TSP,
   ml: 1,
+  'fl oz': ML_PER_FL_OZ,
+  'fluid ounce': ML_PER_FL_OZ,
+  'fluid ounces': ML_PER_FL_OZ,
+  // Purchase units (default capacities for inventory consumption)
+  jar: 60,
+  jars: 60,
+  bottle: 500,
+  bottles: 500,
+  bunch: 120,
+  bunches: 120,
+  container: 1000,
+  containers: 1000,
 };
 
 const WEIGHT_TO_G: Record<string, number> = {
@@ -68,24 +87,30 @@ export function convertToBaseUnit(quantity: number, unit: string): { value: numb
   return null;
 }
 
+/** Snap to nearest integer when within epsilon (fixes floating-point artifacts). */
+function snapIfNearInteger(x: number, epsilon = 1e-10): number {
+  const rounded = Math.round(x);
+  return Math.abs(x - rounded) < epsilon ? rounded : x;
+}
+
 /**
  * Convert from base unit (ml or g) to target unit.
+ * Snaps to integer when result is within floating-point epsilon of a whole number.
  */
 export function convertFromBaseUnit(value: number, targetUnit: string, category: UnitCategory): number | null {
   const u = normalizeUnit(targetUnit);
   if (!u) return null;
 
+  let result: number | null = null;
   if (category === 'volume') {
     const factor = VOLUME_TO_ML[u];
-    if (factor != null) return value / factor;
-  }
-
-  if (category === 'weight') {
+    if (factor != null) result = value / factor;
+  } else if (category === 'weight') {
     const factor = WEIGHT_TO_G[u];
-    if (factor != null) return value / factor;
+    if (factor != null) result = value / factor;
   }
 
-  return null;
+  return result != null ? snapIfNearInteger(result) : null;
 }
 
 /**

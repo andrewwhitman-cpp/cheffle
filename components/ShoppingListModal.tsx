@@ -16,6 +16,7 @@ interface ShoppingListModalProps {
   onSave: (items: ShoppingListItem[]) => void;
   onSkip: () => void;
   isOpen: boolean;
+  naturalizing?: boolean;
 }
 
 function parseScaleInput(value: string): number | null {
@@ -35,6 +36,7 @@ export default function ShoppingListModal({
   onSave,
   onSkip,
   isOpen,
+  naturalizing = false,
 }: ShoppingListModalProps) {
   const [editedItems, setEditedItems] = useState<ShoppingListItem[]>(items);
   const [scaleInput, setScaleInput] = useState(String(scale));
@@ -99,7 +101,9 @@ export default function ShoppingListModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {editedItems.length === 0 ? (
+          {naturalizing ? (
+            <p className="text-sage-500">Formatting...</p>
+          ) : editedItems.length === 0 ? (
             <p className="text-sage-500">No items to buy. You have everything in inventory.</p>
           ) : (
             <ul className="space-y-2">

@@ -79,14 +79,21 @@ export async function POST(
 
       if (existing) {
         const newQuantity = existing.quantity + quantity;
-        await db.run(
-          'UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-          newQuantity,
-          existing.id,
-          user.id
-        );
-        const idx = existingItems.findIndex((e) => e.id === existing.id);
-        if (idx >= 0) existingItems[idx].quantity = newQuantity;
+        const isDepleted = newQuantity <= 0 || newQuantity < 0.02;
+        if (isDepleted) {
+          await db.run('DELETE FROM inventory WHERE id = ? AND user_id = ?', existing.id, user.id);
+          const idx = existingItems.findIndex((e) => e.id === existing.id);
+          if (idx >= 0) existingItems.splice(idx, 1);
+        } else {
+          await db.run(
+            'UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+            newQuantity,
+            existing.id,
+            user.id
+          );
+          const idx = existingItems.findIndex((e) => e.id === existing.id);
+          if (idx >= 0) existingItems[idx].quantity = newQuantity;
+        }
       } else {
         await db.run(
           'INSERT INTO inventory (user_id, name, quantity, unit) VALUES (?, ?, ?, ?)',

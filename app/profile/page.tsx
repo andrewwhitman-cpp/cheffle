@@ -33,6 +33,8 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [dietaryPreferences, setDietaryPreferences] = useState('');
   const [skillLevel, setSkillLevel] = useState<string>('');
+  const [unitPreference, setUnitPreference] = useState<string>('metric');
+  const [naturalUnits, setNaturalUnits] = useState(false);
   const [kitchenContext, setKitchenContext] = useState<KitchenContext>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,6 +67,8 @@ export default function ProfilePage() {
             : data.dietary_preferences || ''
         );
         setSkillLevel(data.skill_level || '');
+        setUnitPreference(data.unit_preference || 'metric');
+        setNaturalUnits(data.natural_units === true);
         setKitchenContext(data.kitchen_context || {});
       }
     } catch (err) {
@@ -93,6 +97,8 @@ export default function ProfilePage() {
           display_name: displayName || null,
           dietary_preferences: prefs,
           skill_level: skillLevel || null,
+          unit_preference: unitPreference || null,
+          natural_units: naturalUnits,
           kitchen_context: kitchenContext,
         }),
       });
@@ -331,6 +337,39 @@ export default function ProfilePage() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">
+                    Units for inventory and shopping list
+                  </label>
+                  <p className="text-xs text-sage-500 mb-2">
+                    Choose how quantities are displayed (e.g. 12 oz vs 340 g).
+                  </p>
+                  <select
+                    value={unitPreference}
+                    onChange={(e) => setUnitPreference(e.target.value)}
+                    className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white"
+                  >
+                    <option value="metric">Metric (g, ml)</option>
+                    <option value="imperial">Imperial (oz, fl oz)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">
+                    Natural units (AI)
+                  </label>
+                  <p className="text-xs text-sage-500 mb-2">
+                    Use AI to format shopping list in natural units (e.g. 1 lb instead of 16 oz).
+                  </p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={naturalUnits}
+                      onChange={(e) => setNaturalUnits(e.target.checked)}
+                      className="rounded border-sage-300 text-terracotta-500 focus:ring-terracotta-500"
+                    />
+                    <span className="text-sage-800">Enable natural units for shopping list</span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-sage-700 mb-2">

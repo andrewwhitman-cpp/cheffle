@@ -5,6 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
 import UnitCombobox from '@/components/UnitCombobox';
 import { parseQuantityToNumberOrZero } from '@/lib/ingredient-parser';
+import { simplifyForDisplay } from '@/lib/unit-simplify';
 
 interface InventoryItem {
   id: number;
@@ -29,9 +30,22 @@ export default function InventoryPage() {
   const [editQuantity, setEditQuantity] = useState('');
   const [editUnit, setEditUnit] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [unitPreference, setUnitPreference] = useState<'imperial' | 'metric'>('metric');
 
   useEffect(() => {
     fetchInventory();
+  }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const res = await authFetch('/api/profile');
+      if (res.ok) {
+        const data = await res.json();
+        const pref = data?.unit_preference;
+        if (pref === 'imperial' || pref === 'metric') setUnitPreference(pref);
+      }
+    };
+    fetchProfile();
   }, []);
 
   const fetchInventory = async () => {
@@ -51,22 +65,14 @@ export default function InventoryPage() {
     }
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    const name = newName.trim();
-    if (!name) return;
-
+  const doAdd = async (name: string, quantity: number, unit: string) => {
     setAdding(true);
+    setError('');
     try {
       const res = await authFetch('/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          quantity: parseQuantityToNumberOrZero(newQuantity) || 0,
-          unit: newUnit.trim(),
-        }),
+        body: JSON.stringify({ name, quantity, unit }),
       });
 
       if (!res.ok) {
@@ -91,6 +97,18 @@ export default function InventoryPage() {
     }
   };
 
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const name = newName.trim();
+    if (!name) return;
+
+    const qty = parseQuantityToNumberOrZero(newQuantity) || 0;
+    const unit = newUnit.trim();
+
+    await doAdd(name, qty, unit);
+  };
+
   const startEdit = (item: InventoryItem) => {
     setEditingId(item.id);
     setEditName(item.name);
@@ -110,16 +128,19 @@ export default function InventoryPage() {
     if (editingId == null) return;
     setError('');
 
+    const unit = editUnit.trim();
+
+    await doUpdate(editingId, editName.trim(), parseQuantityToNumberOrZero(editQuantity), unit);
+    cancelEdit();
+  };
+
+  const doUpdate = async (id: number, name: string, quantity: number, unit: string) => {
+    setError('');
     try {
       const res = await authFetch('/api/inventory', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingId,
-          name: editName.trim(),
-          quantity: parseQuantityToNumberOrZero(editQuantity),
-          unit: editUnit.trim(),
-        }),
+        body: JSON.stringify({ id, name, quantity, unit }),
       });
 
       if (!res.ok) {
@@ -127,10 +148,13 @@ export default function InventoryPage() {
         throw new Error(data.message || 'Failed to update');
       }
       const updated = await res.json();
-      setItems((prev) =>
-        prev.map((i) => (i.id === editingId ? updated : i)).sort((a, b) => a.name.localeCompare(b.name))
-      );
-      cancelEdit();
+      if (updated.deleted) {
+        setItems((prev) => prev.filter((i) => i.id !== id).sort((a, b) => a.name.localeCompare(b.name)));
+      } else {
+        setItems((prev) =>
+          prev.map((i) => (i.id === id ? updated : i)).sort((a, b) => a.name.localeCompare(b.name))
+        );
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update');
     }
@@ -159,7 +183,8 @@ export default function InventoryPage() {
   };
 
   const formatDisplay = (item: InventoryItem) => {
-    const parts = [item.quantity, item.unit, item.name].filter(Boolean);
+    const { quantity, unit } = simplifyForDisplay(item.quantity, item.unit, unitPreference);
+    const parts = [quantity, unit, item.name].filter(Boolean);
     return parts.join(' ');
   };
 
@@ -208,6 +233,9 @@ export default function InventoryPage() {
         {/* Add form */}
         <form onSubmit={handleAdd} className="mb-8 p-6 bg-white border border-sage-200 rounded-lg">
           <h2 className="text-lg font-medium text-sage-900 mb-4">Add ingredient</h2>
+          <p className="text-sm text-sage-600 mb-4">
+            Enter quantities as shown on the package (e.g. 12 oz, 500 ml).
+          </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"

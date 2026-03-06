@@ -39,10 +39,13 @@ async function runMigrations() {
     'dietary_preferences',
     'skill_level',
     'kitchen_context',
+    'unit_preference',
+    'natural_units',
   ];
   for (const col of alterColumns) {
     try {
-      await client.execute(`ALTER TABLE users ADD COLUMN ${col} TEXT`);
+      const type = col === 'natural_units' ? 'INTEGER DEFAULT 0' : 'TEXT';
+      await client.execute(`ALTER TABLE users ADD COLUMN ${col} ${type}`);
     } catch {
       // Column already exists
     }

@@ -10,7 +10,7 @@ const MAIN_MENU = [
 ];
 
 const MY_KITCHEN = [
-  { href: '/inventory', label: 'Smart Pantry' },
+  { href: '/inventory', label: 'Inventory' },
   { href: '/meal-plan', label: 'Meal Planner' },
   { href: '/shopping-list', label: 'Shopping list' },
   { href: '/glossary', label: 'Glossary' },
@@ -83,7 +83,7 @@ function ChevronRightIcon() {
 }
 
 const KITCHEN_ICONS: Record<string, React.ReactNode> = {
-  'Smart Pantry': <BasketIcon />,
+  'Inventory': <BasketIcon />,
   'Meal Planner': <CalendarIcon />,
   'Shopping list': <ListIcon />,
   'Glossary': <BookOpenIcon />,

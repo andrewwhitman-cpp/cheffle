@@ -10,6 +10,8 @@ interface UnitComboboxProps {
   className?: string;
   disabled?: boolean;
   size?: 'sm' | 'md';
+  /** Override unit list. Default: INVENTORY_UNITS */
+  units?: readonly string[];
 }
 
 export default function UnitCombobox({
@@ -19,6 +21,7 @@ export default function UnitCombobox({
   className = '',
   disabled = false,
   size = 'md',
+  units = INVENTORY_UNITS,
 }: UnitComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -27,8 +30,8 @@ export default function UnitCombobox({
   const displayValue = value || '';
   const filterLower = inputValue.trim().toLowerCase();
   const filteredUnits = filterLower
-    ? INVENTORY_UNITS.filter((u) => u.toLowerCase().includes(filterLower))
-    : [...INVENTORY_UNITS];
+    ? units.filter((u) => u.toLowerCase().includes(filterLower))
+    : [...units];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

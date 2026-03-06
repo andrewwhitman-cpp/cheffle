@@ -88,6 +88,25 @@ export function isFuzzyIngredient(ing: { name: string; quantity: string; unit: s
 }
 
 /**
+ * Parse per-unit weight (oz) from ingredient name when unit is embedded, e.g. "(4-6 ounce) salmon filets".
+ * Returns average oz per item for ranges, or single value. Returns null if not found.
+ */
+export function parsePerUnitWeightOzFromName(name: string): number | null {
+  const s = String(name || '').trim();
+  const rangeMatch = s.match(/\((\d+\.?\d*)\s*[-–—to]+\s*(\d+\.?\d*)\s*(?:ounce|oz)s?\)/i);
+  if (rangeMatch) {
+    const a = parseFloat(rangeMatch[1]);
+    const b = parseFloat(rangeMatch[2]);
+    return (a + b) / 2;
+  }
+  const singleMatch = s.match(/\((\d+\.?\d*)\s*(?:ounce|oz)s?\)/i);
+  if (singleMatch) {
+    return parseFloat(singleMatch[1]);
+  }
+  return null;
+}
+
+/**
  * Convert a recipe ingredient name to natural shopping list format.
  * Strips preparation details (diced, chopped, etc.), parentheticals, and form adjectives.
  * Example: "avocados, diced" -> "avocados"; "crumbled feta cheese" -> "feta cheese"

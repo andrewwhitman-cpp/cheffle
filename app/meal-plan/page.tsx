@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
@@ -103,6 +103,11 @@ export default function MealPlanPage() {
   const [showShoppingModal, setShowShoppingModal] = useState(false);
   const [shoppingScale, setShoppingScale] = useState(1);
   const [inventory, setInventory] = useState<{ id: number; name: string; quantity: number; unit: string }[]>([]);
+  const [unitPreference, setUnitPreference] = useState<'imperial' | 'metric'>('metric');
+  const [naturalUnits, setNaturalUnits] = useState(false);
+  const [displayItems, setDisplayItems] = useState<ShoppingListItem[]>([]);
+  const [naturalizing, setNaturalizing] = useState(false);
+  const [existingShoppingList, setExistingShoppingList] = useState<{ name: string; quantity: number; unit: string }[]>([]);
   const [activePopover, setActivePopover] = useState<{ dateStr: string; mealType: string } | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null);
   const pendingNavigateRef = useRef<string | null>(null);
@@ -139,6 +144,34 @@ export default function MealPlanPage() {
     }
   }, []);
 
+  const fetchProfile = useCallback(async () => {
+    const res = await authFetch('/api/profile');
+    if (res.ok) {
+      const data = await res.json();
+      const pref = data?.unit_preference;
+      if (pref === 'imperial' || pref === 'metric') setUnitPreference(pref);
+      setNaturalUnits(data?.natural_units === true);
+    }
+  }, []);
+
+  const fetchExistingShoppingList = useCallback(async () => {
+    const res = await authFetch('/api/shopping-lists?latest=true');
+    if (res.ok) {
+      const data = await res.json();
+      const items = data?.items ?? [];
+      const unpurchased = items
+        .filter((i: { purchased?: number }) => !i.purchased)
+        .map((i: { name: string; quantity: number; unit: string }) => ({
+          name: i.name,
+          quantity: Number(i.quantity ?? 0),
+          unit: String(i.unit ?? '').trim(),
+        }));
+      setExistingShoppingList(unpurchased);
+    } else {
+      setExistingShoppingList([]);
+    }
+  }, []);
+
   const fetchEntries = useCallback(async () => {
     const doFetch = async (): Promise<{ data: MealPlanEntry[]; ok: boolean }> => {
       const res = await authFetch(`/api/meal-plans?start=${startStr}&end=${endStr}`, { cache: 'no-store' });
@@ -164,11 +197,17 @@ export default function MealPlanPage() {
     const load = async () => {
       setLoading(true);
       setError('');
-      await Promise.all([fetchRecipes(), fetchInventory(), fetchEntries()]);
+      await Promise.all([fetchRecipes(), fetchInventory(), fetchProfile(), fetchEntries()]);
       setLoading(false);
     };
     load();
-  }, [fetchRecipes, fetchInventory, fetchEntries]);
+  }, [fetchRecipes, fetchInventory, fetchProfile, fetchEntries]);
+
+  useEffect(() => {
+    if (showShoppingModal) {
+      fetchExistingShoppingList();
+    }
+  }, [showShoppingModal, fetchExistingShoppingList]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -366,7 +405,7 @@ export default function MealPlanPage() {
     setViewDate(new Date(d.getFullYear(), d.getMonth(), 1));
   };
 
-  const shoppingItems = (() => {
+  const baseItems = useMemo(() => {
     if (!showShoppingModal) return [];
     const mealEntries = entries.filter((e) => e.recipe_id != null).map((e) => ({
       id: e.id,
@@ -383,8 +422,39 @@ export default function MealPlanPage() {
       quantity: i.quantity,
       unit: i.unit,
     }));
-    return computeShoppingList(mealEntries, invList, recipeList, shoppingScale);
-  })();
+    return computeShoppingList(mealEntries, invList, recipeList, {
+      scale: shoppingScale,
+      existingShoppingList,
+      unitPreference,
+    });
+  }, [showShoppingModal, entries, recipes, inventory, shoppingScale, existingShoppingList, unitPreference]);
+
+  useEffect(() => {
+    if (!showShoppingModal) {
+      setDisplayItems([]);
+      setNaturalizing(false);
+      return;
+    }
+    if (!naturalUnits) {
+      setDisplayItems(baseItems);
+      setNaturalizing(false);
+      return;
+    }
+    setDisplayItems(baseItems);
+    setNaturalizing(true);
+    authFetch('/api/shopping-lists/naturalize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: baseItems, unitPreference }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const items = data?.items;
+        setDisplayItems(Array.isArray(items) && items.length === baseItems.length ? items : baseItems);
+      })
+      .catch(() => setDisplayItems(baseItems))
+      .finally(() => setNaturalizing(false));
+  }, [showShoppingModal, naturalUnits, baseItems, unitPreference]);
 
   const todayStr = formatDate(new Date());
 
@@ -487,12 +557,13 @@ export default function MealPlanPage() {
         )}
 
         <ShoppingListModal
-          items={shoppingItems}
+          items={displayItems}
           scale={shoppingScale}
           onScaleChange={setShoppingScale}
           onSave={handleShoppingListSave}
           onSkip={handleShoppingListSkip}
           isOpen={showShoppingModal}
+          naturalizing={naturalizing}
         />
 
         {/* Month navigation + Save */}
