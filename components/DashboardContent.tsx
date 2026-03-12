@@ -18,6 +18,7 @@ interface Recipe {
   servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
+  created_at?: string;
 }
 
 interface ParsedRecipe {
@@ -145,7 +146,13 @@ export default function DashboardContent() {
     setParseError('');
   };
 
-  const recommendedRecipes = recipes.slice(0, 8);
+  const recentlyAddedRecipes = [...recipes]
+    .sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    })
+    .slice(0, 8);
 
   return (
     <ProtectedRoute>
@@ -230,10 +237,10 @@ export default function DashboardContent() {
           </div>
         </div>
 
-        {/* Recommended for You */}
+        {/* Recently added */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="section-heading">Recommended for You</h2>
+            <h2 className="section-heading">Recently added</h2>
             <Link href="/recipes" className="text-sm link-accent">
               View all
             </Link>
@@ -244,14 +251,14 @@ export default function DashboardContent() {
                 <div key={i} className="h-48 rounded-lg border border-sage-200 bg-sage-50 animate-pulse" />
               ))}
             </div>
-          ) : recommendedRecipes.length === 0 ? (
+          ) : recentlyAddedRecipes.length === 0 ? (
             <div className="rounded-xl border border-dashed border-sage-300 bg-white p-12 text-center shadow-sm">
               <p className="text-sage-600 mb-2">No recipes yet.</p>
               <p className="text-sm text-sage-500">Add a recipe from a URL above to get started.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recommendedRecipes.map((recipe) => (
+              {recentlyAddedRecipes.map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={recipe} />
               ))}
             </div>

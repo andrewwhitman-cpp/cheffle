@@ -10,5 +10,5 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     return <>{children}</>;
   }
 
-  return <AppLayout showHeader={true}>{children}</AppLayout>;
+  return <AppLayout>{children}</AppLayout>;
 }

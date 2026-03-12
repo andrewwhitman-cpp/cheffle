@@ -387,7 +387,7 @@ export default function RecipeDetailPage() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Link href={`/recipes/${recipe.id}/cook`} className="btn-primary px-4 py-2 text-sm">
+                <Link href={`/recipes/${recipe.id}/cook`} className="btn-sage px-4 py-2 text-sm">
                   Start cooking
                 </Link>
                 <button onClick={() => setIsEditing(true)} className="btn-secondary px-4 py-2 text-sm">
