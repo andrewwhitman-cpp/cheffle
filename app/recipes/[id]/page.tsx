@@ -32,6 +32,9 @@ interface Recipe {
   servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
+  is_favorite?: boolean;
+  dietary_tags?: string[];
+  equipment_required?: string[];
 }
 
 interface ModifiedRecipe {
@@ -85,6 +88,15 @@ export default function RecipeDetailPage() {
   const [readjusting, setReadjusting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Organization state
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [recipeCollections, setRecipeCollections] = useState<Array<{ id: number; name: string }>>([]);
+  const [allCollections, setAllCollections] = useState<Array<{ id: number; name: string }>>([]);
+  const [recipeTags, setRecipeTags] = useState<Array<{ id: number; name: string }>>([]);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [showCollectionPicker, setShowCollectionPicker] = useState(false);
+
   const parseScaleInput = (value: string): number | null => {
     const trimmed = value.trim();
     if (!trimmed) return null;
@@ -134,7 +146,95 @@ export default function RecipeDetailPage() {
     }
 
     fetchRecipe();
+    fetchOrganization();
   }, [recipeId, isDemo, user]);
+
+  const fetchOrganization = async () => {
+    if (!user || isDemo) return;
+    try {
+      const [colRes, tagRes, allColRes] = await Promise.all([
+        authFetch(`/api/recipes/${recipeId}/collections`),
+        authFetch(`/api/recipes/${recipeId}/tags`),
+        authFetch('/api/collections'),
+      ]);
+      if (colRes.ok) setRecipeCollections(await colRes.json());
+      if (tagRes.ok) setRecipeTags(await tagRes.json());
+      if (allColRes.ok) setAllCollections(await allColRes.json());
+    } catch { /* ignore */ }
+  };
+
+  const handleFavoriteToggle = async () => {
+    if (!user || isDemo) return;
+    const newVal = !isFavorite;
+    setIsFavorite(newVal);
+    try {
+      await authFetch(`/api/recipes/${recipeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_favorite: newVal }),
+      });
+    } catch {
+      setIsFavorite(!newVal);
+    }
+  };
+
+  const handleAddToCollection = async (colId: number) => {
+    try {
+      const res = await authFetch(`/api/recipes/${recipeId}/collections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection_ids: [colId] }),
+      });
+      if (res.ok) setRecipeCollections(await res.json());
+    } catch { /* ignore */ }
+  };
+
+  const handleRemoveFromCollection = async (colId: number) => {
+    try {
+      const res = await authFetch(`/api/recipes/${recipeId}/collections?collection_id=${colId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) setRecipeCollections((prev) => prev.filter((c) => c.id !== colId));
+    } catch { /* ignore */ }
+  };
+
+  const handleCreateAndAddCollection = async () => {
+    if (!newCollectionName.trim()) return;
+    try {
+      const createRes = await authFetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCollectionName.trim() }),
+      });
+      if (!createRes.ok) return;
+      const newCol = await createRes.json();
+      setAllCollections((prev) => [...prev, newCol]);
+      await handleAddToCollection(newCol.id);
+      setNewCollectionName('');
+    } catch { /* ignore */ }
+  };
+
+  const handleAddTag = async () => {
+    if (!newTagInput.trim()) return;
+    try {
+      const res = await authFetch(`/api/recipes/${recipeId}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names: [newTagInput.trim()] }),
+      });
+      if (res.ok) setRecipeTags(await res.json());
+      setNewTagInput('');
+    } catch { /* ignore */ }
+  };
+
+  const handleRemoveTag = async (tagId: number) => {
+    try {
+      const res = await authFetch(`/api/recipes/${recipeId}/tags?tag_id=${tagId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) setRecipeTags((prev) => prev.filter((t) => t.id !== tagId));
+    } catch { /* ignore */ }
+  };
 
   const fetchRecipe = async () => {
     try {
@@ -144,6 +244,7 @@ export default function RecipeDetailPage() {
 
       const data = await res.json();
       setRecipe(data);
+      setIsFavorite(!!data.is_favorite);
       const decodedInstructions = decodeHtmlEntities(data.instructions || '');
       setFormData({
         name: decodeHtmlEntities(data.name),
@@ -463,6 +564,108 @@ export default function RecipeDetailPage() {
                 >
                   View original recipe →
                 </a>
+              </div>
+            )}
+
+            {/* Organization: favorite, collections, tags */}
+            {canEdit && (
+              <div className="mb-6 space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleFavoriteToggle}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                      isFavorite
+                        ? 'bg-terracotta-50 border-terracotta-300 text-terracotta-700'
+                        : 'border-sage-300 text-sage-600 hover:bg-sage-50'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-4 h-4 ${isFavorite ? 'fill-terracotta-500' : 'fill-none stroke-current'}`} strokeWidth={isFavorite ? 0 : 1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                    </svg>
+                    {isFavorite ? 'Favorited' : 'Favorite'}
+                  </button>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowCollectionPicker(!showCollectionPicker)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-sage-300 text-sage-600 hover:bg-sage-50 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                        <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
+                      </svg>
+                      Collections
+                    </button>
+                    {showCollectionPicker && (
+                      <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-sage-200 rounded-lg shadow-lg p-3 min-w-[220px]">
+                        {allCollections.length > 0 && (
+                          <div className="space-y-1 mb-2">
+                            {allCollections.map((col) => {
+                              const isIn = recipeCollections.some((rc) => rc.id === col.id);
+                              return (
+                                <label key={col.id} className="flex items-center gap-2 text-sm text-sage-700 cursor-pointer hover:bg-sage-50 px-2 py-1 rounded">
+                                  <input
+                                    type="checkbox"
+                                    checked={isIn}
+                                    onChange={() => isIn ? handleRemoveFromCollection(col.id) : handleAddToCollection(col.id)}
+                                    className="rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-500"
+                                  />
+                                  {col.name}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            value={newCollectionName}
+                            onChange={(e) => setNewCollectionName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateAndAddCollection())}
+                            placeholder="New collection..."
+                            className="flex-1 px-2 py-1 border border-sage-300 rounded text-sm focus:ring-1 focus:ring-terracotta-500"
+                          />
+                          <button type="button" onClick={handleCreateAndAddCollection} className="text-xs px-2 py-1 bg-terracotta-600 text-white rounded hover:bg-terracotta-700">
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Collection badges */}
+                {recipeCollections.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {recipeCollections.map((col) => (
+                      <span key={col.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-sage-100 text-sage-700">
+                        {col.name}
+                        <button type="button" onClick={() => handleRemoveFromCollection(col.id)} className="text-sage-400 hover:text-sage-700">&times;</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tags */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {recipeTags.map((tag) => (
+                    <span key={tag.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-terracotta-50 text-terracotta-700">
+                      {tag.name}
+                      <button type="button" onClick={() => handleRemoveTag(tag.id)} className="text-terracotta-400 hover:text-terracotta-700">&times;</button>
+                    </span>
+                  ))}
+                  <div className="inline-flex items-center gap-1">
+                    <input
+                      type="text"
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                      placeholder="Add tag..."
+                      className="px-2 py-0.5 border border-sage-200 rounded-full text-xs w-24 focus:outline-none focus:ring-1 focus:ring-terracotta-500 focus:w-32 transition-all"
+                    />
+                  </div>
+                </div>
               </div>
             )}
 

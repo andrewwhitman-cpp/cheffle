@@ -7,6 +7,7 @@ import { normalizeInstructions } from '@/lib/recipe-display';
 import { parseServingsToNumber } from '@/lib/servings-utils';
 import { adjustRecipeForSkillLevel } from '@/lib/recipe-adjustment';
 import type { SkillLevel } from '@/lib/skill-levels';
+import { extractRecipeMetadata } from '@/lib/parse-metadata';
 
 const ANON_RATE_LIMIT = 3;
 const ANON_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -124,6 +125,8 @@ export async function POST(request: NextRequest) {
       servings?: number | null;
       source_url?: string;
       skill_level_adjusted?: string | null;
+      dietary_tags?: string[];
+      equipment_required?: string[];
     };
 
     // Try JSON-LD first
@@ -152,6 +155,11 @@ export async function POST(request: NextRequest) {
       const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel, kitchenContext, dietaryPreferences, unitPreference);
       recipe = { ...adjusted, source_url: url, skill_level_adjusted: skillLevel, servings: recipe.servings };
     }
+
+    // Extract dietary tags and equipment metadata
+    const metadata = await extractRecipeMetadata(recipe.name, recipe.ingredients);
+    recipe.dietary_tags = metadata.dietary_tags;
+    recipe.equipment_required = metadata.equipment_required;
 
     return NextResponse.json(recipe);
   } catch (error: any) {

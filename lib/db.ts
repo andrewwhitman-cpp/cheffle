@@ -90,9 +90,59 @@ async function runMigrations() {
     // Column already exists
   }
 
-  await client.execute('DROP TABLE IF EXISTS recipe_tags');
+  const recipeAlterCols = ['is_favorite', 'dietary_tags', 'equipment_required'];
+  for (const col of recipeAlterCols) {
+    try {
+      const type = col === 'is_favorite' ? 'INTEGER DEFAULT 0' : 'TEXT';
+      await client.execute(`ALTER TABLE recipes ADD COLUMN ${col} ${type}`);
+    } catch {
+      // Column already exists
+    }
+  }
+
   await client.execute('DROP TABLE IF EXISTS ingredient_lists');
-  await client.execute('DROP TABLE IF EXISTS tags');
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS collections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS recipe_collections (
+      recipe_id INTEGER NOT NULL,
+      collection_id INTEGER NOT NULL,
+      PRIMARY KEY (recipe_id, collection_id),
+      FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+      FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS tags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(user_id, name)
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS recipe_tags (
+      recipe_id INTEGER NOT NULL,
+      tag_id INTEGER NOT NULL,
+      PRIMARY KEY (recipe_id, tag_id),
+      FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+      FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+    )
+  `);
 }
 
 let migrationsRun = false;

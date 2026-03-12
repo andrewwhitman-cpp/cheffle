@@ -10,6 +10,8 @@ export interface DemoRecipe {
   source_url?: string;
   skill_level_adjusted?: string | null;
   created_at?: string;
+  dietary_tags?: string[];
+  equipment_required?: string[];
 }
 
 export const demoRecipes: DemoRecipe[] = [

@@ -31,6 +31,9 @@ export async function GET(
     return NextResponse.json({
       ...recipe,
       ingredients: JSON.parse(recipe.ingredients || '[]'),
+      is_favorite: recipe.is_favorite === 1,
+      dietary_tags: recipe.dietary_tags ? JSON.parse(recipe.dietary_tags) : [],
+      equipment_required: recipe.equipment_required ? JSON.parse(recipe.equipment_required) : [],
     });
   } catch (error: any) {
     console.error('Get recipe error:', error);
@@ -109,6 +112,9 @@ export async function PUT(
     return NextResponse.json({
       ...recipe,
       ingredients: JSON.parse(recipe.ingredients || '[]'),
+      is_favorite: recipe.is_favorite === 1,
+      dietary_tags: recipe.dietary_tags ? JSON.parse(recipe.dietary_tags) : [],
+      equipment_required: recipe.equipment_required ? JSON.parse(recipe.equipment_required) : [],
     });
   } catch (error: any) {
     console.error('Update recipe error:', error);
@@ -116,6 +122,42 @@ export async function PUT(
       { message: error.message || 'Failed to update recipe' },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const token = getTokenFromRequest(request);
+    const user = await getUserFromToken(token);
+    if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+
+    const recipeId = parseInt(params.id, 10);
+    const existing = await db.get('SELECT id FROM recipes WHERE id = ? AND user_id = ?', recipeId, user.id);
+    if (!existing) return NextResponse.json({ message: 'Recipe not found' }, { status: 404 });
+
+    const body = await request.json();
+    if (body.is_favorite !== undefined) {
+      await db.run(
+        'UPDATE recipes SET is_favorite = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        body.is_favorite ? 1 : 0,
+        recipeId
+      );
+    }
+
+    const recipe = (await db.get('SELECT * FROM recipes WHERE id = ?', recipeId)) as any;
+    return NextResponse.json({
+      ...recipe,
+      ingredients: JSON.parse(recipe.ingredients || '[]'),
+      is_favorite: recipe.is_favorite === 1,
+      dietary_tags: recipe.dietary_tags ? JSON.parse(recipe.dietary_tags) : [],
+      equipment_required: recipe.equipment_required ? JSON.parse(recipe.equipment_required) : [],
+    });
+  } catch (error: any) {
+    console.error('Patch recipe error:', error);
+    return NextResponse.json({ message: error.message || 'Failed to update recipe' }, { status: 500 });
   }
 }
 

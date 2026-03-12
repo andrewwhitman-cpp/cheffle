@@ -31,6 +31,8 @@ interface ParsedRecipe {
   servings?: number | null;
   source_url?: string;
   skill_level_adjusted?: string | null;
+  dietary_tags?: string[];
+  equipment_required?: string[];
 }
 
 export default function DashboardContent() {
@@ -122,6 +124,8 @@ export default function DashboardContent() {
           servings: preview.servings ?? null,
           source_url: preview.source_url,
           skill_level_adjusted: preview.skill_level_adjusted ?? null,
+          dietary_tags: preview.dietary_tags ?? [],
+          equipment_required: preview.equipment_required ?? [],
         }),
       });
 
