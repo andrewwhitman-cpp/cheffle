@@ -32,34 +32,6 @@ interface ParsedRecipe {
   skill_level_adjusted?: string | null;
 }
 
-interface MealPlanEntry {
-  id: number;
-  plan_date: string;
-  meal_type: string;
-  recipe_id: number | null;
-}
-
-interface ShoppingListItem {
-  id: number;
-  name: string;
-  quantity: number;
-  unit: string;
-  purchased: number;
-}
-
-interface ShoppingList {
-  id: number;
-  name: string;
-  items: ShoppingListItem[];
-}
-
-const MEAL_ORDER = ['breakfast', 'lunch', 'dinner'] as const;
-const MEAL_LABELS: Record<string, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
-
-function formatDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 export default function DashboardContent() {
   const router = useRouter();
   const [url, setUrl] = useState('');
@@ -68,16 +40,10 @@ export default function DashboardContent() {
   const [preview, setPreview] = useState<ParsedRecipe | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [todayMeals, setTodayMeals] = useState<MealPlanEntry[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
   const [skillLevel, setSkillLevel] = useState<string | null>(null);
-  const [loadingMeals, setLoadingMeals] = useState(true);
   const [loadingRecipes, setLoadingRecipes] = useState(true);
-  const [loadingShopping, setLoadingShopping] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(true);
-
-  const todayStr = formatDate(new Date());
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -93,27 +59,6 @@ export default function DashboardContent() {
     }
   }, []);
 
-  const fetchTodayMeals = useCallback(async () => {
-    try {
-      const doFetch = async (): Promise<MealPlanEntry[]> => {
-        const res = await authFetch(`/api/meal-plans?start=${todayStr}&end=${todayStr}`, { cache: 'no-store' });
-        if (!res.ok) return [];
-        const data = await res.json();
-        return Array.isArray(data) ? data : [];
-      };
-      let data = await doFetch();
-      if (data.length === 0) {
-        await new Promise((r) => setTimeout(r, 400));
-        data = await doFetch();
-      }
-      setTodayMeals(data);
-    } catch (err) {
-      console.error('Failed to fetch meal plan', err);
-    } finally {
-      setLoadingMeals(false);
-    }
-  }, [todayStr]);
-
   const fetchRecipes = useCallback(async () => {
     try {
       const res = await authFetch('/api/recipes');
@@ -128,32 +73,10 @@ export default function DashboardContent() {
     }
   }, []);
 
-  const fetchShoppingList = useCallback(async () => {
-    try {
-      const res = await authFetch('/api/shopping-lists?latest=true');
-      if (res.ok) {
-        const data = await res.json();
-        if (data && !Array.isArray(data) && data.items) {
-          setShoppingList(data);
-        } else {
-          setShoppingList(null);
-        }
-      } else {
-        setShoppingList(null);
-      }
-    } catch (err) {
-      console.error('Failed to fetch shopping list', err);
-    } finally {
-      setLoadingShopping(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchTodayMeals();
     fetchRecipes();
-    fetchShoppingList();
     fetchProfile();
-  }, [fetchTodayMeals, fetchRecipes, fetchShoppingList, fetchProfile]);
+  }, [fetchRecipes, fetchProfile]);
 
   const handleParse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,10 +145,7 @@ export default function DashboardContent() {
     setParseError('');
   };
 
-  const recipeMap = Object.fromEntries(recipes.map((r) => [r.id, r]));
   const recommendedRecipes = recipes.slice(0, 8);
-  const unpurchasedItems = shoppingList?.items?.filter((i) => !i.purchased) ?? [];
-  const mealsPlannedCount = todayMeals.filter((e) => e.recipe_id != null).length;
 
   return (
     <ProtectedRoute>
@@ -284,44 +204,7 @@ export default function DashboardContent() {
         </div>
 
         {/* Dashboard widget cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Today's meals card */}
-          <div className="card-base border-l-4 border-l-terracotta-200">
-            <p className="card-label mb-3">Today&apos;s meals</p>
-            {loadingMeals ? (
-              <SectionSkeleton lines={3} />
-            ) : (
-              <div className="space-y-2">
-                {todayMeals.length === 0 ? (
-                  <p className="text-sage-500 text-sm">Nothing planned.</p>
-                ) : (
-                  MEAL_ORDER.map((mealType) => {
-                    const entry = todayMeals.find((e) => e.meal_type === mealType);
-                    const recipe = entry?.recipe_id ? recipeMap[entry.recipe_id] : null;
-                    return (
-                      <div key={mealType} className="flex justify-between items-center text-sm gap-2">
-                        <span className="text-sage-600 shrink-0">{MEAL_LABELS[mealType]}</span>
-                        {recipe ? (
-                          <Link
-                            href={`/recipes/${recipe.id}`}
-                            className="text-terracotta-600 hover:text-terracotta-700 font-medium truncate"
-                          >
-                            {recipe.name}
-                          </Link>
-                        ) : (
-                          <span className="text-sage-400">—</span>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-                <Link href="/meal-plan" className="mt-3 inline-block text-xs link-accent">
-                  View meal plan →
-                </Link>
-              </div>
-            )}
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Cooking skill level card - sage accent */}
           <div className="rounded-xl border border-sage-600 bg-sage-700 p-6 text-white shadow-sm">
             <p className="card-label mb-3 text-sage-300">Cooking skill level</p>
@@ -337,29 +220,12 @@ export default function DashboardContent() {
             </Link>
           </div>
 
-          {/* Daily goal / Shopping list card */}
+          {/* Daily goal card */}
           <div className="card-base border-l-4 border-l-cream-400">
             <p className="card-label mb-3 text-sage-600">Daily goal</p>
-            {loadingShopping ? (
-              <SectionSkeleton lines={2} />
-            ) : unpurchasedItems.length === 0 && shoppingList ? (
-              <div className="flex items-center gap-2">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-600 text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                    <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z" clipRule="evenodd" />
-                  </svg>
-                </span>
-                <p className="text-sm font-medium text-sage-800">All items purchased</p>
-              </div>
-            ) : shoppingList ? (
-              <p className="text-sage-700 text-sm">
-                {unpurchasedItems.length} item{unpurchasedItems.length !== 1 ? 's' : ''} to buy
-              </p>
-            ) : (
-              <p className="text-sage-600 text-sm">No shopping list yet</p>
-            )}
-            <Link href="/shopping-list" className="mt-3 inline-block text-xs link-accent">
-              View list →
+            <p className="text-sage-700 text-sm">Cook something delicious today.</p>
+            <Link href="/recipes" className="mt-3 inline-block text-xs link-accent">
+              Browse recipes →
             </Link>
           </div>
         </div>

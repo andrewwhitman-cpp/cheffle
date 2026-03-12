@@ -8,8 +8,6 @@ import { authFetch } from '@/lib/auth-fetch';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
 import { useRecipeChat } from '@/hooks/useRecipeChat';
 import { useVoiceMode } from '@/hooks/useVoiceMode';
-import ConfirmConsumptionModal from '@/components/ConfirmConsumptionModal';
-
 interface RecipeIngredient {
   name: string;
   quantity: string;
@@ -32,7 +30,6 @@ export default function CookPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const {
     chatMessages,
     setChatMessages,
@@ -109,24 +106,14 @@ export default function CookPage() {
 
   const goNext = useCallback(() => {
     if (isLast) {
-      setShowConfirmModal(true);
+      router.push(`/recipes/${params.id}`);
     } else {
       setCurrentStepIndex((i) => i + 1);
     }
-  }, [isLast]);
+  }, [isLast, params.id, router]);
   const goPrev = useCallback(() => {
     if (!isFirst) setCurrentStepIndex((i) => i - 1);
   }, [isFirst]);
-
-  const handleConfirmDone = useCallback(() => {
-    setShowConfirmModal(false);
-    router.push(`/recipes/${params.id}`);
-  }, [params.id, router]);
-
-  const handleSkipDone = useCallback(() => {
-    setShowConfirmModal(false);
-    router.push(`/recipes/${params.id}`);
-  }, [params.id, router]);
 
   useEffect(() => {
     if (!params.id) return;
@@ -457,16 +444,6 @@ export default function CookPage() {
                   </button>
                 </div>
               </div>
-            )}
-
-            {showConfirmModal && recipe && (
-              <ConfirmConsumptionModal
-                recipeId={recipe.id}
-                recipeName={decodeHtmlEntities(recipe.name)}
-                ingredients={recipe.ingredients || []}
-                onConfirm={handleConfirmDone}
-                onSkip={handleSkipDone}
-              />
             )}
 
             <form onSubmit={handleChatSubmit} className="flex gap-2 shrink-0">

@@ -21,9 +21,6 @@ export default function Navigation() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/recipes', label: 'Recipes' },
-    { href: '/meal-plan', label: 'Meal plan' },
-    { href: '/shopping-list', label: 'Shopping list' },
-    { href: '/inventory', label: 'Inventory' },
     { href: '/glossary', label: 'Glossary' },
     { href: '/profile', label: 'Profile' },
   ];
@@ -41,7 +38,7 @@ export default function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  prefetch={link.href === '/' || link.href === '/meal-plan' ? false : undefined}
+                  prefetch={link.href === '/' ? false : undefined}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                     pathname === link.href
                       ? 'border-terracotta-500 text-sage-900'
