@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authFetch } from '@/lib/auth-fetch';
 import { SKILL_LEVELS } from '@/lib/skill-levels';
@@ -20,8 +20,11 @@ function toggleInSet(set: Set<string>, value: string): Set<string> {
   return next;
 }
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
+  const finishRedirect = returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,7 +45,7 @@ export default function OnboardingPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.onboarding_complete) {
-          router.replace('/');
+          router.replace(finishRedirect);
           return;
         }
       }
@@ -61,7 +64,7 @@ export default function OnboardingPage() {
         method: 'POST',
       });
       if (res.ok) {
-        router.push('/');
+        router.push(finishRedirect);
       } else {
         setError('Failed to skip. Please try again.');
       }
@@ -98,7 +101,7 @@ export default function OnboardingPage() {
         throw new Error(data.message || 'Failed to save');
       }
 
-      router.push('/');
+      router.push(finishRedirect);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {
@@ -432,5 +435,19 @@ export default function OnboardingPage() {
         </div>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-sage-500">Loading...</div>
+        </div>
+      }
+    >
+      <OnboardingContent />
+    </Suspense>
   );
 }

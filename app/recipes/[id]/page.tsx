@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import Link from 'next/link';
 import { authFetch } from '@/lib/auth-fetch';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
@@ -12,6 +13,7 @@ import { SKILL_LEVELS, getSkillLevelLabel, getSkillLevelValue } from '@/lib/skil
 import { scaleServingsDisplay } from '@/lib/servings-utils';
 import { useRecipeChat } from '@/hooks/useRecipeChat';
 import ConfirmModal from '@/components/ConfirmModal';
+import { isDemoRecipe, getDemoRecipe } from '@/lib/demo-recipes';
 
 interface Ingredient {
   name: string;
@@ -20,7 +22,7 @@ interface Ingredient {
 }
 
 interface Recipe {
-  id: number;
+  id: number | string;
   name: string;
   description: string;
   ingredients: Ingredient[];
@@ -46,6 +48,12 @@ interface ModifiedRecipe {
 export default function RecipeDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const { requireAuth } = useAuthGate();
+  const recipeId = params.id as string;
+  const isDemo = isDemoRecipe(recipeId);
+  const canEdit = !!user && !isDemo;
+
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -71,7 +79,7 @@ export default function RecipeDetailPage() {
     setChatInput,
     chatLoading,
     setChatLoading,
-  } = useRecipeChat(params.id as string);
+  } = useRecipeChat(recipeId);
   const [servingScale, setServingScale] = useState(1);
   const [scaleInput, setScaleInput] = useState('1');
   const [readjusting, setReadjusting] = useState(false);
@@ -96,12 +104,41 @@ export default function RecipeDetailPage() {
   };
 
   useEffect(() => {
-    if (params.id) fetchRecipe();
-  }, [params.id]);
+    if (!recipeId) return;
+
+    if (isDemo) {
+      const demo = getDemoRecipe(recipeId);
+      if (demo) {
+        setRecipe(demo);
+        setFormData({
+          name: demo.name,
+          description: demo.description || '',
+          prep_time: String(demo.prep_time),
+          cook_time: String(demo.cook_time),
+          servings: demo.servings != null ? String(demo.servings) : '',
+          instructions: demo.instructions,
+          source_url: '',
+        });
+        setIngredients(demo.ingredients || []);
+      } else {
+        setError('Recipe not found');
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
+      const returnUrl = encodeURIComponent(`/recipes/${recipeId}`);
+      router.push(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+
+    fetchRecipe();
+  }, [recipeId, isDemo, user]);
 
   const fetchRecipe = async () => {
     try {
-      const res = await authFetch(`/api/recipes/${params.id}`);
+      const res = await authFetch(`/api/recipes/${recipeId}`);
 
       if (!res.ok) throw new Error('Recipe not found');
 
@@ -130,7 +167,7 @@ export default function RecipeDetailPage() {
     setError('');
 
     try {
-      const res = await authFetch(`/api/recipes/${params.id}`, {
+      const res = await authFetch(`/api/recipes/${recipeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -157,7 +194,7 @@ export default function RecipeDetailPage() {
 
   const handleDelete = async () => {
     try {
-      const res = await authFetch(`/api/recipes/${params.id}`, {
+      const res = await authFetch(`/api/recipes/${recipeId}`, {
         method: 'DELETE',
       });
 
@@ -194,6 +231,8 @@ export default function RecipeDetailPage() {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading || !recipe) return;
 
+    if (!requireAuth('use AI chat to customize recipes')) return;
+
     const userMessage = chatInput.trim();
     setChatInput('');
     setChatMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
@@ -201,7 +240,7 @@ export default function RecipeDetailPage() {
     setPendingRecipe(null);
 
     try {
-      const res = await authFetch(`/api/recipes/${params.id}/chat`, {
+      const res = await authFetch(`/api/recipes/${recipeId}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -229,13 +268,14 @@ export default function RecipeDetailPage() {
 
   const handleSkillLevelChange = async (newLevel: string) => {
     if (!recipe || readjusting) return;
+    if (!requireAuth('adjust recipes for your skill level')) return;
     const currentLevel = recipe.skill_level_adjusted ?? '';
     if (newLevel === currentLevel) return;
 
     setError('');
     setReadjusting(true);
     try {
-      const res = await authFetch(`/api/recipes/${params.id}/readjust`, {
+      const res = await authFetch(`/api/recipes/${recipeId}/readjust`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -269,7 +309,7 @@ export default function RecipeDetailPage() {
 
     setError('');
     try {
-      const res = await authFetch(`/api/recipes/${params.id}`, {
+      const res = await authFetch(`/api/recipes/${recipeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -298,41 +338,37 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <ProtectedRoute>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="h-4 bg-sage-200 rounded w-32 mb-8 animate-pulse" />
-          <div className="bg-white rounded-lg border border-sage-200 p-6 animate-pulse">
-            <div className="h-8 bg-sage-200 rounded w-3/4 mb-4" />
-            <div className="h-4 bg-sage-100 rounded w-full mb-2" />
-            <div className="h-4 bg-sage-100 rounded w-2/3 mb-6" />
-            <div className="flex gap-4 mb-6">
-              <div className="h-4 bg-sage-200 rounded w-20" />
-              <div className="h-4 bg-sage-200 rounded w-20" />
-              <div className="h-4 bg-sage-200 rounded w-24" />
-            </div>
-            <div className="space-y-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-4 bg-sage-100 rounded" style={{ width: `${90 - i * 5}%` }} />
-              ))}
-            </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="h-4 bg-sage-200 rounded w-32 mb-8 animate-pulse" />
+        <div className="bg-white rounded-lg border border-sage-200 p-6 animate-pulse">
+          <div className="h-8 bg-sage-200 rounded w-3/4 mb-4" />
+          <div className="h-4 bg-sage-100 rounded w-full mb-2" />
+          <div className="h-4 bg-sage-100 rounded w-2/3 mb-6" />
+          <div className="flex gap-4 mb-6">
+            <div className="h-4 bg-sage-200 rounded w-20" />
+            <div className="h-4 bg-sage-200 rounded w-20" />
+            <div className="h-4 bg-sage-200 rounded w-24" />
+          </div>
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-4 bg-sage-100 rounded" style={{ width: `${90 - i * 5}%` }} />
+            ))}
           </div>
         </div>
-      </ProtectedRoute>
+      </div>
     );
   }
 
   if (error && !recipe) {
     return (
-      <ProtectedRoute>
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg">
-            {error}
-          </div>
-          <Link href="/recipes" className="mt-4 inline-block text-terracotta-600 hover:text-terracotta-700">
-            ← Back to recipes
-          </Link>
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg">
+          {error}
         </div>
-      </ProtectedRoute>
+        <Link href="/recipes" className="mt-4 inline-block text-terracotta-600 hover:text-terracotta-700">
+          ← Back to recipes
+        </Link>
+      </div>
     );
   }
 
@@ -341,8 +377,12 @@ export default function RecipeDetailPage() {
   const displayDescription = decodeHtmlEntities(recipe.description || '');
   const instructionSteps = parseInstructionsToSteps(recipe.instructions);
 
+  const handleStartCooking = () => {
+    if (!requireAuth('use guided cook mode')) return;
+    router.push(`/recipes/${recipe.id}/cook`);
+  };
+
   return (
-    <ProtectedRoute>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <Link href="/recipes" className="text-terracotta-600 hover:text-terracotta-700 text-sm font-medium">
@@ -363,21 +403,28 @@ export default function RecipeDetailPage() {
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h1 className="text-2xl font-semibold text-sage-900">{decodeHtmlEntities(recipe.name)}</h1>
-                  <select
-                    value={getSkillLevelValue(recipe.skill_level_adjusted)}
-                    onChange={(e) => handleSkillLevelChange(e.target.value)}
-                    disabled={readjusting}
-                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="" disabled={!recipe.source_url}>
-                      {recipe.source_url ? 'No adjustment' : '—'}
-                    </option>
-                    {SKILL_LEVELS.map((level) => (
-                      <option key={level.value} value={level.value}>
-                        Adjusted for {level.label}
+                  {canEdit && (
+                    <select
+                      value={getSkillLevelValue(recipe.skill_level_adjusted)}
+                      onChange={(e) => handleSkillLevelChange(e.target.value)}
+                      disabled={readjusting}
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="" disabled={!recipe.source_url}>
+                        {recipe.source_url ? 'No adjustment' : '—'}
                       </option>
-                    ))}
-                  </select>
+                      {SKILL_LEVELS.map((level) => (
+                        <option key={level.value} value={level.value}>
+                          Adjusted for {level.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {!canEdit && recipe.skill_level_adjusted && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800">
+                      {getSkillLevelLabel(recipe.skill_level_adjusted)}
+                    </span>
+                  )}
                   {readjusting && (
                     <span className="text-xs text-sage-500">Adjusting...</span>
                   )}
@@ -387,18 +434,22 @@ export default function RecipeDetailPage() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Link href={`/recipes/${recipe.id}/cook`} className="btn-sage px-4 py-2 text-sm">
+                <button onClick={handleStartCooking} className="btn-sage px-4 py-2 text-sm">
                   Start cooking
-                </Link>
-                <button onClick={() => setIsEditing(true)} className="btn-secondary px-4 py-2 text-sm">
-                  Edit
                 </button>
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="btn-danger px-4 py-2 text-sm"
-                >
-                  Delete
-                </button>
+                {canEdit && (
+                  <>
+                    <button onClick={() => setIsEditing(true)} className="btn-secondary px-4 py-2 text-sm">
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="btn-danger px-4 py-2 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -760,17 +811,18 @@ export default function RecipeDetailPage() {
           </form>
         )}
 
-        <ConfirmModal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleDelete}
-          title="Delete recipe"
-          message={`Are you sure you want to delete "${decodeHtmlEntities(recipe.name)}"? This cannot be undone.`}
-          confirmLabel="Delete"
-          cancelLabel="Cancel"
-          variant="danger"
-        />
+        {canEdit && (
+          <ConfirmModal
+            isOpen={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            onConfirm={handleDelete}
+            title="Delete recipe"
+            message={`Are you sure you want to delete "${decodeHtmlEntities(recipe.name)}"? This cannot be undone.`}
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            variant="danger"
+          />
+        )}
       </div>
-    </ProtectedRoute>
   );
 }

@@ -8,16 +8,37 @@ import { parseServingsToNumber } from '@/lib/servings-utils';
 import { adjustRecipeForSkillLevel } from '@/lib/recipe-adjustment';
 import type { SkillLevel } from '@/lib/skill-levels';
 
+const ANON_RATE_LIMIT = 3;
+const ANON_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const anonParseLog = new Map<string, number[]>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = anonParseLog.get(ip) ?? [];
+  const recent = timestamps.filter((t) => now - t < ANON_RATE_WINDOW_MS);
+  anonParseLog.set(ip, recent);
+  if (recent.length >= ANON_RATE_LIMIT) return true;
+  recent.push(now);
+  anonParseLog.set(ip, recent);
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
     const user = await getUserFromToken(token);
 
     if (!user) {
-      return NextResponse.json(
-        { message: 'Unauthorized' },
-        { status: 401 }
-      );
+      const ip =
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.headers.get('x-real-ip') ||
+        'unknown';
+      if (isRateLimited(ip)) {
+        return NextResponse.json(
+          { message: 'Rate limit exceeded. Sign up for unlimited recipe parsing.' },
+          { status: 429 },
+        );
+      }
     }
 
     const body = await request.json();
@@ -66,22 +87,25 @@ export async function POST(request: NextRequest) {
 
     const html = await fetchResponse.text();
 
-    // Get user's skill level and kitchen context for recipe adjustment
-    const profile = (await db.get('SELECT skill_level, kitchen_context FROM users WHERE id = ?', user.id)) as {
-      skill_level: string | null;
-      kitchen_context: string | null;
-    } | undefined;
-    const skillLevel = profile?.skill_level as SkillLevel | null | undefined;
+    // Skill-level adjustment only for authenticated users
+    let skillLevel: SkillLevel | null | undefined = null;
     let kitchenContext = null;
-    if (profile?.kitchen_context) {
-      try {
-        kitchenContext = JSON.parse(profile.kitchen_context);
-      } catch {
-        kitchenContext = null;
+    if (user) {
+      const profile = (await db.get('SELECT skill_level, kitchen_context FROM users WHERE id = ?', user.id)) as {
+        skill_level: string | null;
+        kitchen_context: string | null;
+      } | undefined;
+      skillLevel = profile?.skill_level as SkillLevel | null | undefined;
+      if (profile?.kitchen_context) {
+        try {
+          kitchenContext = JSON.parse(profile.kitchen_context);
+        } catch {
+          kitchenContext = null;
+        }
       }
     }
     const validLevels: SkillLevel[] = ['new_to_cooking', 'comfortable_with_cooking', 'experienced_cook'];
-    const shouldAdjust = skillLevel && validLevels.includes(skillLevel);
+    const shouldAdjust = user && skillLevel && validLevels.includes(skillLevel);
 
     let recipe: {
       name: string;
@@ -116,7 +140,7 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Apply skill-level adjustment if user has one set
+    // Apply skill-level adjustment if authenticated user has one set
     if (shouldAdjust && skillLevel) {
       const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel, kitchenContext);
       recipe = { ...adjusted, source_url: url, skill_level_adjusted: skillLevel, servings: recipe.servings };

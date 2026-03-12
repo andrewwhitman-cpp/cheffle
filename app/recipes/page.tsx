@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import RecipeCard from '@/components/RecipeCard';
 import RecipeCardSkeleton from '@/components/RecipeCardSkeleton';
 import { authFetch } from '@/lib/auth-fetch';
 import { getSkillLevelLabel } from '@/lib/skill-levels';
+import { getDemoRecipesList } from '@/lib/demo-recipes';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface Recipe {
-  id: number;
+  id: number | string;
   name: string;
   description: string;
   prep_time: number;
@@ -36,10 +38,12 @@ interface ParsedRecipe {
 function RecipesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const { requireAuth } = useAuthGate();
   const initialSearch = searchParams.get('search') ?? '';
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!user);
 
   const [url, setUrl] = useState('');
   const [parsing, setParsing] = useState(false);
@@ -47,12 +51,14 @@ function RecipesPageContent() {
   const [preview, setPreview] = useState<ParsedRecipe | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Sync search query when URL changes (e.g. from header search)
+  const demoRecipes = useMemo(() => getDemoRecipesList(), []);
+
   useEffect(() => {
     setSearchQuery(initialSearch);
   }, [initialSearch]);
 
   const fetchRecipes = useCallback(async (query: string) => {
+    if (!user) return;
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -68,33 +74,40 @@ function RecipesPageContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const isInitialMount = useRef(true);
 
-  // Initial load (use search param from URL if present)
   useEffect(() => {
-    fetchRecipes(initialSearch);
-  }, [fetchRecipes, initialSearch]);
+    if (user) fetchRecipes(initialSearch);
+  }, [fetchRecipes, initialSearch, user]);
 
-  // Debounced live search when user types (skip on initial mount)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
+    if (!user) return;
 
     const timer = setTimeout(() => {
       fetchRecipes(searchQuery);
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, fetchRecipes]);
+  }, [searchQuery, fetchRecipes, user]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchRecipes(searchQuery);
+    if (user) fetchRecipes(searchQuery);
   };
+
+  const displayedRecipes: Recipe[] = user ? recipes : (() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return demoRecipes;
+    return demoRecipes.filter(
+      (r) => r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q),
+    );
+  })();
 
   const handleParse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +117,8 @@ function RecipesPageContent() {
 
     setParsing(true);
     try {
-      const res = await authFetch('/api/recipes/parse', {
+      const fetchFn = user ? authFetch : fetch;
+      const res = await fetchFn('/api/recipes/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
@@ -124,6 +138,10 @@ function RecipesPageContent() {
 
   const handleSave = async () => {
     if (!preview) return;
+    if (!user) {
+      requireAuth('save recipes to your collection');
+      return;
+    }
     setSaving(true);
     try {
       const res = await authFetch('/api/recipes', {
@@ -165,7 +183,9 @@ function RecipesPageContent() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-        <h1 className="section-heading text-2xl mb-6">Recipes</h1>
+        <h1 className="section-heading text-2xl mb-6">
+          {user ? 'Recipes' : 'Sample Recipes'}
+        </h1>
 
         {/* Add recipe section */}
         <div className="mb-8">
@@ -184,7 +204,7 @@ function RecipesPageContent() {
               title={!url.trim() ? 'Paste a recipe URL above to add it' : undefined}
               className="btn-primary px-6 py-3"
             >
-              {parsing ? 'Parsing...' : 'Add recipe'}
+              {parsing ? 'Parsing...' : user ? 'Add recipe' : 'Try it'}
             </button>
           </form>
           {parseError && (
@@ -241,13 +261,15 @@ function RecipesPageContent() {
               <RecipeCardSkeleton key={i} />
             ))}
           </div>
-        ) : recipes.length === 0 ? (
+        ) : displayedRecipes.length === 0 ? (
           <div className="text-center py-12 rounded-xl border border-dashed border-sage-300 bg-white shadow-sm">
-            <p className="text-sage-600">No recipes found. Paste a URL above to add one.</p>
+            <p className="text-sage-600">
+              {user ? 'No recipes found. Paste a URL above to add one.' : 'No matching sample recipes.'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {recipes.map((recipe) => (
+            {displayedRecipes.map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} />
             ))}
           </div>
@@ -258,18 +280,16 @@ function RecipesPageContent() {
 
 export default function RecipesPage() {
   return (
-    <ProtectedRoute>
-      <Suspense fallback={
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <RecipeCardSkeleton key={i} />
-            ))}
-          </div>
+    <Suspense fallback={
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <RecipeCardSkeleton key={i} />
+          ))}
         </div>
-      }>
-        <RecipesPageContent />
-      </Suspense>
-    </ProtectedRoute>
+      </div>
+    }>
+      <RecipesPageContent />
+    </Suspense>
   );
 }

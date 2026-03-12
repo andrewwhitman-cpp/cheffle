@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthGateProvider } from '@/contexts/AuthGateContext';
 import LayoutWrapper from '@/components/LayoutWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -39,7 +40,9 @@ export default function RootLayout({
     <html lang="en">
                   <body className={inter.className}>
                     <AuthProvider>
-                      <LayoutWrapper>{children}</LayoutWrapper>
+                      <AuthGateProvider>
+                        <LayoutWrapper>{children}</LayoutWrapper>
+                      </AuthGateProvider>
                     </AuthProvider>
                     <Analytics />
                   </body>

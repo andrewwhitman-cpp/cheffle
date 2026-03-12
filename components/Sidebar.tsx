@@ -68,10 +68,6 @@ export default function Sidebar() {
     router.push('/login');
   };
 
-  if (!user) {
-    return null;
-  }
-
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
@@ -139,27 +135,46 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* User profile */}
+      {/* Bottom section: user profile or auth links */}
       <div className="border-t border-sage-200 p-4">
-        <Link
-          href="/profile"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sage-700 hover:bg-sage-50 transition-colors"
-        >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-terracotta-100 text-terracotta-700 font-medium text-sm">
-            {user.username?.charAt(0)?.toUpperCase() ?? '?'}
+        {user ? (
+          <>
+            <Link
+              href="/profile"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sage-700 hover:bg-sage-50 transition-colors"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-terracotta-100 text-terracotta-700 font-medium text-sm">
+                {user.username?.charAt(0)?.toUpperCase() ?? '?'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-sage-900">{user.username}</p>
+                <p className="truncate text-xs text-sage-500">Profile</p>
+              </div>
+              <ChevronRightIcon />
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="mt-2 w-full text-left px-3 py-1.5 text-sm text-sage-600 hover:text-sage-900"
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col gap-2 px-3">
+            <Link
+              href="/register"
+              className="btn-primary text-center text-sm py-2"
+            >
+              Sign up free
+            </Link>
+            <Link
+              href="/login"
+              className="btn-secondary text-center text-sm py-2"
+            >
+              Log in
+            </Link>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-sage-900">{user.username}</p>
-            <p className="truncate text-xs text-sage-500">Profile</p>
-          </div>
-          <ChevronRightIcon />
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="mt-2 w-full text-left px-3 py-1.5 text-sm text-sage-600 hover:text-sage-900"
-        >
-          Logout
-        </button>
+        )}
       </div>
     </aside>
   );

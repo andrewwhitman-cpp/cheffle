@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { getSkillLevelLabel } from '@/lib/skill-levels';
 
 interface Recipe {
-  id: number;
+  id: number | string;
   name: string;
   description: string;
   prep_time: number;
