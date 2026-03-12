@@ -33,6 +33,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [dietaryPreferences, setDietaryPreferences] = useState('');
   const [skillLevel, setSkillLevel] = useState<string>('');
+  const [unitPreference, setUnitPreference] = useState<string>('metric');
   const [kitchenContext, setKitchenContext] = useState<KitchenContext>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,6 +66,7 @@ export default function ProfilePage() {
             : data.dietary_preferences || ''
         );
         setSkillLevel(data.skill_level || '');
+        setUnitPreference(data.unit_preference || 'metric');
         setKitchenContext(data.kitchen_context || {});
       }
     } catch (err) {
@@ -93,6 +95,7 @@ export default function ProfilePage() {
           display_name: displayName || null,
           dietary_preferences: prefs,
           skill_level: skillLevel || null,
+          unit_preference: unitPreference,
           kitchen_context: kitchenContext,
         }),
       });
@@ -343,6 +346,22 @@ export default function ProfilePage() {
                     className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500"
                     placeholder="e.g. vegetarian, gluten-free, dairy-free (comma-separated)"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-sage-700 mb-2">
+                    Unit system
+                  </label>
+                  <p className="text-xs text-sage-500 mb-2">
+                    AI-modified recipes will use your preferred units.
+                  </p>
+                  <select
+                    value={unitPreference}
+                    onChange={(e) => setUnitPreference(e.target.value)}
+                    className="w-full max-w-md px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white"
+                  >
+                    <option value="metric">Metric (g, ml, °C)</option>
+                    <option value="imperial">Imperial (oz, cups, °F)</option>
+                  </select>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                   <button

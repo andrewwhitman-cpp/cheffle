@@ -115,18 +115,25 @@ export async function POST(
       };
 
       let kitchenContext = null;
-      const profile = (await db.get('SELECT kitchen_context FROM users WHERE id = ?', user.id)) as {
+      let dietaryPreferences: string[] | null = null;
+      let unitPreference: string | null = null;
+      const profile = (await db.get(
+        'SELECT kitchen_context, dietary_preferences, unit_preference FROM users WHERE id = ?',
+        user.id
+      )) as {
         kitchen_context: string | null;
+        dietary_preferences: string | null;
+        unit_preference: string | null;
       } | undefined;
       if (profile?.kitchen_context) {
-        try {
-          kitchenContext = JSON.parse(profile.kitchen_context);
-        } catch {
-          kitchenContext = null;
-        }
+        try { kitchenContext = JSON.parse(profile.kitchen_context); } catch { kitchenContext = null; }
       }
+      if (profile?.dietary_preferences) {
+        try { dietaryPreferences = JSON.parse(profile.dietary_preferences); } catch { dietaryPreferences = null; }
+      }
+      unitPreference = profile?.unit_preference ?? null;
 
-      const adjusted = await adjustRecipeForSkillLevel(currentRecipe, skill_level as SkillLevel, kitchenContext);
+      const adjusted = await adjustRecipeForSkillLevel(currentRecipe, skill_level as SkillLevel, kitchenContext, dietaryPreferences, unitPreference);
 
       await db.run(
         `UPDATE recipes

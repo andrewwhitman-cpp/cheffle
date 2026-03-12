@@ -3,7 +3,7 @@ import db from '@/lib/db';
 import { getTokenFromRequest, getUserFromToken } from '@/lib/auth';
 import { normalizeIngredient } from '@/lib/ingredient-parser';
 import { normalizeInstructions } from '@/lib/recipe-display';
-import { formatKitchenContextForAI } from '@/lib/kitchen-context';
+import { formatKitchenContextForAI, formatDietaryForAI, formatUnitPreferenceForAI } from '@/lib/kitchen-context';
 import OpenAI from 'openai';
 
 function getOpenAIClient() {
@@ -134,9 +134,14 @@ ${recipeContext.instructions}
 
 Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min${recipeContext.servings ? `, Serves: ${recipeContext.servings}` : ''}`;
 
-    const profile = (await db.get('SELECT skill_level, kitchen_context FROM users WHERE id = ?', user.id)) as {
+    const profile = (await db.get(
+      'SELECT skill_level, kitchen_context, dietary_preferences, unit_preference FROM users WHERE id = ?',
+      user.id
+    )) as {
       skill_level: string | null;
       kitchen_context: string | null;
+      dietary_preferences: string | null;
+      unit_preference: string | null;
     } | undefined;
     const skillLevel = profile?.skill_level;
     const skillInstruction = skillLevel && SKILL_LEVEL_INSTRUCTIONS[skillLevel]
@@ -144,20 +149,26 @@ Prep: ${recipeContext.prep_time} min, Cook: ${recipeContext.cook_time} min${reci
       : '';
     let kitchenContext = null;
     if (profile?.kitchen_context) {
-      try {
-        kitchenContext = JSON.parse(profile.kitchen_context);
-      } catch {
-        kitchenContext = null;
-      }
+      try { kitchenContext = JSON.parse(profile.kitchen_context); } catch { kitchenContext = null; }
     }
     const kitchenInstruction = formatKitchenContextForAI(kitchenContext)
       ? `\n\n${formatKitchenContextForAI(kitchenContext)}`
+      : '';
+    let dietaryPrefs: string[] | null = null;
+    if (profile?.dietary_preferences) {
+      try { dietaryPrefs = JSON.parse(profile.dietary_preferences); } catch { dietaryPrefs = null; }
+    }
+    const dietaryInstruction = formatDietaryForAI(dietaryPrefs)
+      ? `\n\n${formatDietaryForAI(dietaryPrefs)}`
+      : '';
+    const unitInstruction = formatUnitPreferenceForAI(profile?.unit_preference)
+      ? `\n\n${formatUnitPreferenceForAI(profile?.unit_preference)}`
       : '';
     const cookingModeInstruction =
       cookingContext && typeof cookingContext === 'object'
         ? `\n\n${COOKING_MODE_PROMPT}\n\nCurrent step (${(cookingContext.currentStepIndex ?? 0) + 1} of ${cookingContext.totalSteps ?? 1}): "${cookingContext.currentStepText || ''}"`
         : '';
-    const systemPrompt = BASE_SYSTEM_PROMPT + cookingModeInstruction + skillInstruction + kitchenInstruction;
+    const systemPrompt = BASE_SYSTEM_PROMPT + cookingModeInstruction + skillInstruction + kitchenInstruction + dietaryInstruction + unitInstruction;
 
     const openai = getOpenAIClient();
 

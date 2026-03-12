@@ -102,30 +102,52 @@ export function isEmptyKitchenContext(ctx: KitchenContext): boolean {
 export function formatKitchenContextForAI(context: KitchenContext | null | undefined): string {
   if (!context) return '';
 
-  const parts: string[] = [];
+  const lines: string[] = [];
 
   if (context.equipment_have?.length) {
     const labels = context.equipment_have.map((v) => getLabel(v, EQUIPMENT_OPTIONS));
-    parts.push(`Has: ${labels.join(', ')}`);
+    lines.push(`- Available equipment: ${labels.join(', ')}. Use ONLY these when possible. If the recipe requires something the user doesn't have, suggest a specific alternative (e.g. "No blender? Mash with a fork or use a potato masher").`);
   }
+
+  const applianceParts: string[] = [];
   if (context.appliances_have?.length) {
     const labels = context.appliances_have.map((v) => getLabel(v, APPLIANCE_OPTIONS));
-    parts.push(`Appliances: ${labels.join(', ')}`);
+    applianceParts.push(labels.join(', '));
   }
-  if (context.appliances_prefer?.length) {
-    const labels = context.appliances_prefer.map((v) => getLabel(v, APPLIANCE_OPTIONS));
-    parts.push(`Prefers using: ${labels.join(', ')}`);
+  const preferPart = context.appliances_prefer?.length
+    ? `Prefer: ${context.appliances_prefer.map((v) => getLabel(v, APPLIANCE_OPTIONS)).join(', ')}.`
+    : '';
+  const avoidPart = context.appliances_avoid?.length
+    ? `Avoid: ${context.appliances_avoid.map((v) => getLabel(v, APPLIANCE_OPTIONS)).join(', ')}.`
+    : '';
+  if (applianceParts.length || preferPart || avoidPart) {
+    const base = applianceParts.length ? applianceParts.join(', ') : '';
+    const extras = [preferPart, avoidPart].filter(Boolean).join(' ');
+    lines.push(`- Appliances: ${[base, extras].filter(Boolean).join('. ')}`);
   }
-  if (context.appliances_avoid?.length) {
-    const labels = context.appliances_avoid.map((v) => getLabel(v, APPLIANCE_OPTIONS));
-    parts.push(`Avoid using: ${labels.join(', ')}`);
-  }
+
   if (context.constraints?.length) {
     const labels = context.constraints.map((v) => getLabel(v, CONSTRAINT_OPTIONS));
-    parts.push(`Constraints: ${labels.join(', ')}`);
+    lines.push(`- Constraints: ${labels.join(', ')}. Adapt instructions accordingly (e.g. small kitchen = fewer pans, no ventilation = avoid high-heat searing).`);
   }
 
-  if (parts.length === 0) return '';
+  if (lines.length === 0) return '';
 
-  return `User's kitchen: ${parts.join('; ')}. Adjust instructions to use only available equipment, suggest alternatives for missing items, and respect preferences and constraints.`;
+  return `KITCHEN CONTEXT (must follow):\n${lines.join('\n')}\n\nWhen adjusting instructions: (1) Replace equipment the user lacks with alternatives from their list. (2) Add a brief note if a substitution is used. (3) Respect avoid/prefer and constraints.`;
+}
+
+export function formatDietaryForAI(prefs: string[] | null | undefined): string {
+  if (!prefs?.length) return '';
+  return `DIETARY REQUIREMENTS (must follow):\n- User follows: ${prefs.join(', ')}.\n- Do NOT include ingredients that violate these. Replace them with suitable alternatives.\n- If a core ingredient cannot be substituted (e.g. the entire dish is based on it), note this clearly.`;
+}
+
+export function formatUnitPreferenceForAI(pref: string | null | undefined): string {
+  if (!pref) return '';
+  if (pref === 'imperial') {
+    return 'UNIT PREFERENCE: Use imperial units (cups, tablespoons, teaspoons, ounces, pounds, Fahrenheit). Prefer natural measures (e.g. "1 stick butter", "1 cup flour") over precise gram weights.';
+  }
+  if (pref === 'metric') {
+    return 'UNIT PREFERENCE: Use metric units (grams, milliliters, liters, kilograms, Celsius).';
+  }
+  return '';
 }

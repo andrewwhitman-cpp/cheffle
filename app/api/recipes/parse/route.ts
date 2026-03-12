@@ -90,19 +90,26 @@ export async function POST(request: NextRequest) {
     // Skill-level adjustment only for authenticated users
     let skillLevel: SkillLevel | null | undefined = null;
     let kitchenContext = null;
+    let dietaryPreferences: string[] | null = null;
+    let unitPreference: string | null = null;
     if (user) {
-      const profile = (await db.get('SELECT skill_level, kitchen_context FROM users WHERE id = ?', user.id)) as {
+      const profile = (await db.get(
+        'SELECT skill_level, kitchen_context, dietary_preferences, unit_preference FROM users WHERE id = ?',
+        user.id
+      )) as {
         skill_level: string | null;
         kitchen_context: string | null;
+        dietary_preferences: string | null;
+        unit_preference: string | null;
       } | undefined;
       skillLevel = profile?.skill_level as SkillLevel | null | undefined;
       if (profile?.kitchen_context) {
-        try {
-          kitchenContext = JSON.parse(profile.kitchen_context);
-        } catch {
-          kitchenContext = null;
-        }
+        try { kitchenContext = JSON.parse(profile.kitchen_context); } catch { kitchenContext = null; }
       }
+      if (profile?.dietary_preferences) {
+        try { dietaryPreferences = JSON.parse(profile.dietary_preferences); } catch { dietaryPreferences = null; }
+      }
+      unitPreference = profile?.unit_preference ?? null;
     }
     const validLevels: SkillLevel[] = ['new_to_cooking', 'comfortable_with_cooking', 'experienced_cook'];
     const shouldAdjust = user && skillLevel && validLevels.includes(skillLevel);
@@ -142,7 +149,7 @@ export async function POST(request: NextRequest) {
 
     // Apply skill-level adjustment if authenticated user has one set
     if (shouldAdjust && skillLevel) {
-      const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel, kitchenContext);
+      const adjusted = await adjustRecipeForSkillLevel(recipe, skillLevel, kitchenContext, dietaryPreferences, unitPreference);
       recipe = { ...adjusted, source_url: url, skill_level_adjusted: skillLevel, servings: recipe.servings };
     }
 
