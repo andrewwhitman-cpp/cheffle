@@ -7,6 +7,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+        serif: ['var(--font-playfair)', 'serif'],
+      },
       boxShadow: {
         card: '0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05)',
         'card-hover': '0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
@@ -14,30 +18,30 @@ module.exports = {
       colors: {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
-        // Warm food-inspired color palette
+        // Warm food-inspired color palette - Editorial redesign
         terracotta: {
-          50: '#fef5f3',
-          100: '#fde8e3',
-          200: '#fbd5cc',
-          300: '#f7b5a8',
-          400: '#f28b75',
-          500: '#ed6b4f',
-          600: '#dd4f32',
-          700: '#b93e26',
-          800: '#983623',
-          900: '#7d3321',
+          50: '#FDF7F5',
+          100: '#F9EAE5',
+          200: '#F2CDCA',
+          300: '#E4A29B',
+          400: '#D5736A',
+          500: '#C84B31',
+          600: '#A43A24',
+          700: '#812E1D',
+          800: '#64261A',
+          900: '#532219',
         },
         sage: {
-          50: '#f6f7f6',
-          100: '#e3e7e3',
-          200: '#c7d0c7',
-          300: '#a3b2a3',
-          400: '#7d8f7d',
-          500: '#627462',
-          600: '#4d5c4d',
-          700: '#404c40',
-          800: '#363f36',
-          900: '#2e352e',
+          50: '#F8F9F8',
+          100: '#ECEEEC',
+          200: '#D4D8D4',
+          300: '#B5BCB5',
+          400: '#959D95',
+          500: '#828F82',
+          600: '#626D62',
+          700: '#4D564D',
+          800: '#3F463F',
+          900: '#363C36',
         },
         cream: {
           50: '#fefdfb',

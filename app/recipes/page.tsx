@@ -255,101 +255,110 @@ function RecipesPageContent() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <h1 className="section-heading text-2xl mb-6">
-          {user ? 'Recipes' : 'Sample Recipes'}
-        </h1>
-
-        {/* Add recipe section */}
-        <div className="mb-8">
-          <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste recipe URL (e.g. allrecipes.com, bonappetit.com)"
-              className="flex-1 min-w-0 px-4 py-3 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white transition-shadow"
-              disabled={parsing}
-            />
-            <button
-              type="submit"
-              disabled={parsing || !url.trim()}
-              title={!url.trim() ? 'Paste a recipe URL above to add it' : undefined}
-              className="btn-primary px-6 py-3"
-            >
-              {parsing ? 'Parsing...' : user ? 'Add recipe' : 'Try it'}
-            </button>
-          </form>
-          {parseError && (
-            <div className="mt-2 p-3 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg text-sm">
-              {parseError}
-            </div>
-          )}
-          {preview && (
-            <div className="mt-4 card-base">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h3 className="text-lg font-semibold text-sage-900">{preview.name}</h3>
-                {preview.skill_level_adjusted && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800">
-                    Adjusted for {getSkillLevelLabel(preview.skill_level_adjusted)}
-                  </span>
-                )}
-              </div>
-              {preview.description && (
-                <p className="text-sm text-sage-600 mb-4 line-clamp-2">{preview.description}</p>
-              )}
-              {preview.servings != null && preview.servings > 0 && (
-                <p className="text-sm text-sage-500 mb-2">Serves {preview.servings}</p>
-              )}
-              <div className="flex gap-2 mt-4">
-                <button onClick={handleSave} disabled={saving} className="btn-primary">
-                  {saving ? 'Saving...' : 'Save to my recipes'}
-                </button>
-                <button type="button" onClick={handleCancelPreview} className="btn-secondary">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
+        <div className="flex items-baseline justify-between mb-8 pb-4 border-b border-sage-200/60">
+          <h1 className="text-4xl font-serif text-sage-900">
+            {user ? 'Recipes' : 'Sample Recipes'}
+          </h1>
         </div>
 
+        {/* Add recipe section (Editorial styled) */}
+        {user && (
+          <div className="mb-12 max-w-2xl">
+            <div className="bg-white rounded-[2rem] p-2 border border-sage-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] focus-within:border-terracotta-300 focus-within:shadow-[0_8px_30px_rgba(200,75,49,0.08)] transition-all duration-300">
+              <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Paste recipe URL (e.g. Bon Appétit, NYT Cooking)"
+                  className="flex-1 min-w-0 px-6 py-4 bg-transparent focus:outline-none text-sage-900 placeholder:text-sage-400 text-lg"
+                  disabled={parsing}
+                />
+                <button
+                  type="submit"
+                  disabled={parsing || !url.trim()}
+                  title={!url.trim() ? 'Paste a recipe URL above to add it' : undefined}
+                  className="btn-primary rounded-2xl px-8 py-4 m-1 shrink-0"
+                >
+                  {parsing ? 'Extracting...' : 'Extract'}
+                </button>
+              </form>
+            </div>
+            {parseError && (
+              <div className="mt-4 p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-xl text-sm text-center">
+                {parseError}
+              </div>
+            )}
+            {preview && (
+              <div className="mt-6 card-base animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <h3 className="text-2xl font-serif text-sage-900">{preview.name}</h3>
+                  {preview.skill_level_adjusted && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-terracotta-50 text-terracotta-700 font-sans">
+                      Adjusted for {getSkillLevelLabel(preview.skill_level_adjusted)}
+                    </span>
+                  )}
+                </div>
+                {preview.description && (
+                  <p className="text-base text-sage-600 mb-6 leading-relaxed">{preview.description}</p>
+                )}
+                {preview.servings != null && preview.servings > 0 && (
+                  <p className="text-sm font-medium text-sage-500 mb-6 uppercase tracking-wider font-sans">Serves {preview.servings}</p>
+                )}
+                <div className="flex gap-3 mt-4 pt-6 border-t border-sage-100">
+                  <button onClick={handleSave} disabled={saving} className="btn-primary">
+                    {saving ? 'Saving...' : 'Save to collection'}
+                  </button>
+                  <button type="button" onClick={handleCancelPreview} className="btn-ghost">
+                    Discard
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Search + Filters */}
-        <div className="mb-6 space-y-3">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+        <div className="mb-10 space-y-4">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               placeholder="Search recipes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 min-w-0 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 transition-shadow"
+              className="flex-1 min-w-0 px-5 py-3 border border-sage-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white/50 backdrop-blur-sm transition-all text-sage-900 placeholder:text-sage-400"
             />
-            <button type="submit" className="btn-primary px-6 py-2">
+            <button type="submit" className="btn-primary px-8 py-3 rounded-2xl hidden sm:block shadow-sm">
               Search
             </button>
             {user && (
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
+                className={`px-6 py-3 text-sm rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
                   showFilters || hasActiveFilters
-                    ? 'bg-terracotta-50 border-terracotta-300 text-terracotta-700'
-                    : 'border-sage-300 text-sage-600 hover:bg-sage-50'
+                    ? 'bg-terracotta-50 border-terracotta-300 text-terracotta-700 shadow-sm'
+                    : 'bg-white border-sage-300 text-sage-700 hover:bg-sage-50 hover:border-sage-400 shadow-sm'
                 }`}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                </svg>
                 Filters{hasActiveFilters ? ' *' : ''}
               </button>
             )}
           </form>
 
           {user && showFilters && (
-            <div className="bg-white border border-sage-200 rounded-lg p-4 space-y-3">
-              <div className="flex flex-wrap gap-4">
+            <div className="bg-white border border-sage-200/60 rounded-2xl p-6 space-y-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-in slide-in-from-top-2 duration-300">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {/* Time filter */}
-                <div className="min-w-[140px]">
-                  <label className="block text-xs font-medium text-sage-600 mb-1">Total time</label>
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-sage-500 font-sans pl-1">Total time</label>
                   <select
                     value={maxTotalTime}
                     onChange={(e) => setMaxTotalTime(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-sage-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-terracotta-500"
+                    className="w-full px-4 py-2.5 border border-sage-200 rounded-xl text-sm bg-sage-50/50 focus:bg-white focus:ring-2 focus:ring-terracotta-500 outline-none transition-all"
                   >
                     <option value="">Any time</option>
                     {TIME_PRESETS.map((p) => (
@@ -359,12 +368,12 @@ function RecipesPageContent() {
                 </div>
 
                 {/* Skill filter */}
-                <div className="min-w-[160px]">
-                  <label className="block text-xs font-medium text-sage-600 mb-1">Skill level</label>
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-sage-500 font-sans pl-1">Skill level</label>
                   <select
                     value={skillFilter}
                     onChange={(e) => setSkillFilter(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-sage-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-terracotta-500"
+                    className="w-full px-4 py-2.5 border border-sage-200 rounded-xl text-sm bg-sage-50/50 focus:bg-white focus:ring-2 focus:ring-terracotta-500 outline-none transition-all"
                   >
                     <option value="">Any level</option>
                     {SKILL_LEVELS.map((l) => (
@@ -374,12 +383,12 @@ function RecipesPageContent() {
                 </div>
 
                 {/* Dietary filter */}
-                <div className="min-w-[140px]">
-                  <label className="block text-xs font-medium text-sage-600 mb-1">Dietary</label>
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-sage-500 font-sans pl-1">Dietary</label>
                   <select
                     value={dietaryFilter}
                     onChange={(e) => setDietaryFilter(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-sage-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-terracotta-500"
+                    className="w-full px-4 py-2.5 border border-sage-200 rounded-xl text-sm bg-sage-50/50 focus:bg-white focus:ring-2 focus:ring-terracotta-500 outline-none transition-all"
                   >
                     <option value="">Any dietary</option>
                     {DIETARY_OPTIONS.map((d) => (
@@ -390,12 +399,12 @@ function RecipesPageContent() {
 
                 {/* Collection filter */}
                 {collections.length > 0 && (
-                  <div className="min-w-[140px]">
-                    <label className="block text-xs font-medium text-sage-600 mb-1">Collection</label>
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-sage-500 font-sans pl-1">Collection</label>
                     <select
                       value={collectionFilter}
                       onChange={(e) => setCollectionFilter(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-sage-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-terracotta-500"
+                      className="w-full px-4 py-2.5 border border-sage-200 rounded-xl text-sm bg-sage-50/50 focus:bg-white focus:ring-2 focus:ring-terracotta-500 outline-none transition-all"
                     >
                       <option value="">All collections</option>
                       {collections.map((c) => (
@@ -407,12 +416,12 @@ function RecipesPageContent() {
 
                 {/* Tag filter */}
                 {tags.length > 0 && (
-                  <div className="min-w-[140px]">
-                    <label className="block text-xs font-medium text-sage-600 mb-1">Tag</label>
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-sage-500 font-sans pl-1">Tag</label>
                     <select
                       value={tagFilter}
                       onChange={(e) => setTagFilter(e.target.value)}
-                      className="w-full px-3 py-1.5 border border-sage-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-terracotta-500"
+                      className="w-full px-4 py-2.5 border border-sage-200 rounded-xl text-sm bg-sage-50/50 focus:bg-white focus:ring-2 focus:ring-terracotta-500 outline-none transition-all"
                     >
                       <option value="">All tags</option>
                       {tags.map((t) => (
@@ -423,30 +432,32 @@ function RecipesPageContent() {
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
-                <label className="flex items-center gap-2 text-sm text-sage-700">
-                  <input
-                    type="checkbox"
-                    checked={favoriteFilter}
-                    onChange={(e) => setFavoriteFilter(e.target.checked)}
-                    className="rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-500"
-                  />
-                  Favorites only
-                </label>
-                <label className="flex items-center gap-2 text-sm text-sage-700">
-                  <input
-                    type="checkbox"
-                    checked={equipmentMatch}
-                    onChange={(e) => setEquipmentMatch(e.target.checked)}
-                    className="rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-500"
-                  />
-                  Only recipes I can make
-                </label>
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-sage-100">
+                <div className="flex flex-wrap items-center gap-6">
+                  <label className="flex items-center gap-2.5 text-sm text-sage-700 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={favoriteFilter}
+                      onChange={(e) => setFavoriteFilter(e.target.checked)}
+                      className="w-4 h-4 rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-500 transition-colors"
+                    />
+                    <span className="group-hover:text-sage-900 transition-colors">Favorites only</span>
+                  </label>
+                  <label className="flex items-center gap-2.5 text-sm text-sage-700 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={equipmentMatch}
+                      onChange={(e) => setEquipmentMatch(e.target.checked)}
+                      className="w-4 h-4 rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-500 transition-colors"
+                    />
+                    <span className="group-hover:text-sage-900 transition-colors">Only recipes I can make</span>
+                  </label>
+                </div>
                 {hasActiveFilters && (
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="text-sm text-terracotta-600 hover:text-terracotta-800 underline"
+                    className="text-sm font-medium text-terracotta-600 hover:text-terracotta-700 hover:bg-terracotta-50 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     Clear all filters
                   </button>
@@ -457,19 +468,20 @@ function RecipesPageContent() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <RecipeCardSkeleton key={i} />
             ))}
           </div>
         ) : displayedRecipes.length === 0 ? (
-          <div className="text-center py-12 rounded-xl border border-dashed border-sage-300 bg-white shadow-sm">
-            <p className="text-sage-600">
-              {user ? 'No recipes found. Paste a URL above to add one.' : 'No matching sample recipes.'}
+          <div className="text-center py-20 rounded-3xl border border-dashed border-sage-300 bg-white/50 backdrop-blur-sm shadow-sm">
+            <h3 className="text-2xl font-serif text-sage-800 mb-2">No recipes found</h3>
+            <p className="text-sage-500 font-light">
+              {user ? 'Try adjusting your filters or paste a URL above to add a new recipe.' : 'No matching sample recipes.'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {displayedRecipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}

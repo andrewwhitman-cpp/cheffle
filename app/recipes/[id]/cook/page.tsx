@@ -150,64 +150,90 @@ export default function CookPage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <Link
-            href={`/recipes/${recipe.id}`}
-            className="text-terracotta-600 hover:text-terracotta-700 text-sm font-medium"
-          >
-            ← Back to recipe
-          </Link>
-          <button
-            type="button"
-            onClick={() => setChatOpen(true)}
-            className="hidden md:flex w-10 h-10 rounded-lg bg-terracotta-600 text-white hover:bg-terracotta-700 items-center justify-center shrink-0"
-            aria-label="Talk with Cheffle"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={24} height={24} className="shrink-0" aria-hidden>
-              <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
-              <rect x="9" y="11" width="14" height="12" fill="white" />
-            </svg>
-          </button>
+      <div className="fixed inset-0 z-50 bg-sage-900 text-sage-50 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] md:pl-64 transition-all">
+        {/* Progress Bar */}
+        <div className="h-1.5 w-full bg-sage-800 absolute top-0 left-0 right-0 z-10 md:left-64">
+          <div 
+            className="h-full bg-terracotta-500 transition-all duration-500 ease-out" 
+            style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }} 
+          />
         </div>
 
-        <div className="max-w-2xl mx-auto">
-          <div className="flex flex-col">
-            <p className="text-xl sm:text-2xl text-sage-700 font-medium mb-1">{decodeHtmlEntities(recipe.name)}</p>
-            <p className="text-base sm:text-lg text-sage-500 mb-4">
-              Step {stepIndex + 1} of {steps.length}
-              {recipe.servings != null && recipe.servings > 0 && (
-                <span className="ml-2">· Serves {recipe.servings}</span>
-              )}
-            </p>
+        {/* Top Header */}
+        <div className="flex-none p-4 sm:p-6 flex items-center justify-between">
+          <Link
+            href={`/recipes/${recipe.id}`}
+            className="inline-flex items-center gap-2 text-sage-300 hover:text-white text-sm font-medium transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
+            </svg>
+            Exit Cook Mode
+          </Link>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-bold uppercase tracking-widest text-sage-400 font-sans">
+              Step {stepIndex + 1} <span className="text-sage-600 mx-1">/</span> {steps.length}
+            </span>
+          </div>
+        </div>
 
-            <div className="bg-white rounded-xl border border-sage-200 p-8 sm:p-12 min-h-[35vh] max-h-[50vh] flex flex-col justify-center overflow-y-auto mb-6">
-              <p className="text-2xl sm:text-3xl md:text-4xl text-sage-800 leading-relaxed">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 md:px-24 overflow-y-auto">
+          <div className="max-w-4xl mx-auto w-full text-center">
+            <h1 className="text-xl sm:text-2xl text-sage-400 font-serif mb-8 max-w-2xl mx-auto truncate">
+              {decodeHtmlEntities(recipe.name)}
+            </h1>
+            
+            <div className="min-h-[40vh] flex flex-col justify-center">
+              <p className="text-3xl sm:text-5xl md:text-6xl text-white font-serif leading-tight tracking-tight text-balance">
                 {decodeHtmlEntities(currentStep)}
               </p>
             </div>
-
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex gap-4">
-                <button
-                  onClick={goPrev}
-                  disabled={isFirst}
-                  className="px-6 py-3 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition text-sm font-medium"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={goNext}
-                  className="btn-primary px-6 py-3 text-sm"
-                >
-                  {isLast ? 'Done cooking' : 'Next'}
-                </button>
-              </div>
-              <p className="text-sm text-sage-500">← → to navigate</p>
-            </div>
-
           </div>
         </div>
+
+        {/* Bottom Navigation */}
+        <div className="flex-none p-6 sm:p-8 flex flex-col items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6 w-full max-w-md justify-between">
+            <button
+              onClick={goPrev}
+              disabled={isFirst}
+              className="flex-1 h-14 sm:h-16 rounded-2xl border-2 border-sage-700 text-white font-semibold text-lg hover:bg-sage-800 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+              Prev
+            </button>
+            <button
+              onClick={goNext}
+              className="flex-1 h-14 sm:h-16 rounded-2xl bg-terracotta-600 text-white font-semibold text-lg hover:bg-terracotta-500 transition-all shadow-[0_8px_30px_-6px_rgba(200,75,49,0.5)] flex items-center justify-center gap-2"
+            >
+              {isLast ? 'Finish' : 'Next'}
+              {!isLast && (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              )}
+            </button>
+          </div>
+          <p className="text-xs font-bold uppercase tracking-widest text-sage-500 font-sans hidden sm:block">
+            Use arrow keys <span className="text-xl leading-none mx-1">← →</span> to navigate
+          </p>
+        </div>
+
+        {/* Floating Action Button for Chat */}
+        <button
+          type="button"
+          onClick={() => setChatOpen(true)}
+          className="absolute bottom-6 right-6 sm:bottom-12 sm:right-12 w-16 h-16 rounded-full bg-white text-terracotta-600 shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center"
+          aria-label="Talk with Cheffle"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={32} height={32} aria-hidden>
+            <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="currentColor" />
+            <rect x="9" y="11" width="14" height="12" fill="currentColor" />
+          </svg>
+        </button>
       </div>
     </ProtectedRoute>
   );

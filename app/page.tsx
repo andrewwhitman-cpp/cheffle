@@ -61,71 +61,72 @@ function GuestHome() {
   };
 
   return (
-    <div className="px-4 sm:px-6 py-8 max-w-6xl mx-auto">
+    <div className="px-4 sm:px-6 py-12 md:py-20 max-w-6xl mx-auto">
       {/* Welcome hero */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-semibold text-sage-900 mb-2">
-          Your AI-native recipe collection
+      <div className="mb-16 text-center max-w-3xl mx-auto">
+        <h1 className="text-4xl md:text-6xl font-serif text-sage-900 mb-6 leading-tight tracking-tight">
+          Your modern,<br className="hidden sm:block" /> AI-native recipe collection
         </h1>
-        <p className="text-sage-600 max-w-xl mb-4">
-          Add recipes from any URL, chat with AI to customize them for your skill level,
-          and follow guided cook mode step by step.
+        <p className="text-lg md:text-xl text-sage-600 mb-10 font-light leading-relaxed">
+          Curate recipes from anywhere. Chat with AI to adjust portions, dietary needs, or skill level, and follow a beautifully guided cook mode.
         </p>
-        <Link href="/register" className="btn-primary inline-block px-5 py-2 text-sm">
-          Sign up free
+        <Link href="/register" className="btn-primary inline-block px-8 py-3.5 text-base shadow-[0_8px_20px_-6px_rgba(200,75,49,0.4)]">
+          Start your collection
         </Link>
       </div>
 
       {/* Parse URL form */}
-      <div className="mb-8">
-        <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste a recipe URL to try it out"
-            className="flex-1 min-w-0 px-4 py-3 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white transition-shadow"
-            disabled={parsing}
-          />
-          <button
-            type="submit"
-            disabled={parsing || !url.trim()}
-            className="btn-primary px-6 py-3"
-          >
-            {parsing ? 'Parsing...' : 'Try it'}
-          </button>
-        </form>
+      <div className="mb-24 max-w-2xl mx-auto">
+        <div className="bg-white rounded-[2rem] p-2 border border-sage-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste any recipe URL (e.g., Bon Appétit, NYT Cooking)"
+              className="flex-1 min-w-0 px-6 py-4 bg-transparent focus:outline-none text-sage-900 placeholder:text-sage-400 text-lg"
+              disabled={parsing}
+            />
+            <button
+              type="submit"
+              disabled={parsing || !url.trim()}
+              className="btn-primary rounded-2xl px-8 py-4 m-1 shrink-0"
+            >
+              {parsing ? 'Extracting...' : 'Extract recipe'}
+            </button>
+          </form>
+        </div>
         {parseError && (
-          <div className="mt-2 p-3 bg-coral-50 border border-coral-200 text-coral-800 rounded-lg text-sm">
+          <div className="mt-4 p-4 bg-coral-50 border border-coral-200 text-coral-800 rounded-xl text-sm text-center">
             {parseError}
           </div>
         )}
         {preview && (
-          <div className="mt-4 card-base">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold text-sage-900">{preview.name}</h3>
+          <div className="mt-6 card-base animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <h3 className="text-2xl font-serif text-sage-900">{preview.name}</h3>
               {preview.skill_level_adjusted && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-terracotta-50 text-terracotta-700 font-sans">
                   Adjusted for {getSkillLevelLabel(preview.skill_level_adjusted)}
                 </span>
               )}
             </div>
             {preview.description && (
-              <p className="text-sm text-sage-600 mb-4 line-clamp-2">{preview.description}</p>
+              <p className="text-base text-sage-600 mb-6 leading-relaxed">{preview.description}</p>
             )}
             {preview.servings != null && preview.servings > 0 && (
-              <p className="text-sm text-sage-500 mb-2">Serves {preview.servings}</p>
+              <p className="text-sm font-medium text-sage-500 mb-6 uppercase tracking-wider font-sans">Serves {preview.servings}</p>
             )}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-3 mt-4 pt-6 border-t border-sage-100">
               <button onClick={handleSave} className="btn-primary">
-                Save to my recipes
+                Save to collection
               </button>
               <button
                 type="button"
                 onClick={() => { setPreview(null); setParseError(''); }}
-                className="btn-secondary"
+                className="btn-ghost"
               >
-                Cancel
+                Discard
               </button>
             </div>
           </div>
@@ -134,13 +135,13 @@ function GuestHome() {
 
       {/* Sample recipes */}
       <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="section-heading">Sample recipes</h2>
-          <Link href="/recipes" className="text-sm link-accent">
-            View all
+        <div className="flex justify-between items-end mb-8 border-b border-sage-200/60 pb-4">
+          <h2 className="text-3xl font-serif text-sage-900">Sample recipes</h2>
+          <Link href="/recipes" className="text-sm link-accent pb-1">
+            View all collection
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {demoRecipes.slice(0, 6).map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} />
           ))}

@@ -126,22 +126,22 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-50 h-screen w-64 shrink-0 border-r border-sage-200 bg-white flex flex-col transition-transform duration-200 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+        className={`fixed left-0 top-0 z-50 h-screen w-64 shrink-0 border-r border-sage-200/60 bg-white/95 backdrop-blur-xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
       >
         {/* Logo + mobile close button */}
-        <div className="flex h-16 items-center justify-between gap-2 px-6 border-b border-sage-100">
+        <div className="flex h-16 items-center justify-between gap-2 px-6 border-b border-sage-200/60">
           <div className="flex items-center gap-2 min-w-0">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={32} height={32} className="shrink-0 rounded-md" aria-hidden>
-              <rect width="32" height="32" rx="6" fill="#dd4f32" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={32} height={32} className="shrink-0 rounded-md shadow-sm" aria-hidden>
+              <rect width="32" height="32" rx="6" fill="#C84B31" />
               <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
               <rect x="9" y="11" width="14" height="12" fill="white" />
             </svg>
-            <span className="text-xl font-semibold tracking-tight text-terracotta-600">Cheffle</span>
+            <span className="text-2xl font-serif font-semibold tracking-tight text-terracotta-600">Cheffle</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="md:hidden p-2 -m-2 rounded-lg text-sage-600 hover:bg-sage-100 hover:text-sage-900 transition-colors"
+            className="md:hidden p-2 -m-2 rounded-lg text-sage-600 hover:bg-sage-50 hover:text-sage-900 transition-colors"
             aria-label="Close menu"
           >
             <XMarkIcon />
@@ -150,8 +150,8 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
       {/* Main menu */}
       <nav className="flex-1 overflow-y-auto py-4">
-        <p className="px-6 text-xs font-semibold uppercase tracking-wider text-sage-400 mb-2">Main menu</p>
-        <ul className="space-y-0.5 px-3">
+        <p className="px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-sage-400 mb-3 font-sans">Main menu</p>
+        <ul className="space-y-1 px-4">
           {MAIN_MENU.map((link) => {
             const active = isActive(link.href);
             const Icon = link.icon === 'book' ? BookIcon : HomeIcon;
@@ -161,10 +161,10 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   href={link.href}
                   prefetch={link.href === '/' ? false : undefined}
                   onClick={handleNavClick}
-                  className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-3 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 rounded-xl py-2 px-3 text-sm font-medium transition-all duration-200 ${
                     active
-                      ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
-                      : 'border-transparent text-sage-600 hover:bg-sage-50 hover:text-sage-900'
+                      ? 'bg-terracotta-50/50 text-terracotta-700 shadow-[inset_2px_0_0_0_#C84B31]'
+                      : 'text-sage-600 hover:bg-sage-50/50 hover:text-sage-900'
                   }`}
                 >
                   <Icon />
@@ -178,8 +178,8 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         {/* Collections */}
         {user && collections.length > 0 && (
           <>
-            <p className="px-6 text-xs font-semibold uppercase tracking-wider text-sage-400 mt-6 mb-2">Collections</p>
-            <ul className="space-y-0.5 px-3">
+            <p className="px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-sage-400 mt-8 mb-3 font-sans">Collections</p>
+            <ul className="space-y-1 px-4">
               {collections.map((col) => {
                 const active = activeCollectionId === String(col.id);
                 return (
@@ -187,10 +187,10 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                     <Link
                       href={`/recipes?collection=${col.id}`}
                       onClick={handleNavClick}
-                      className={`flex items-center gap-3 rounded-lg border-l-2 py-2 pr-3 pl-3 text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-3 rounded-xl py-2 px-3 text-sm font-medium transition-all duration-200 ${
                         active
-                          ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
-                          : 'border-transparent text-sage-600 hover:bg-sage-50 hover:text-sage-900'
+                          ? 'bg-terracotta-50/50 text-terracotta-700 shadow-[inset_2px_0_0_0_#C84B31]'
+                          : 'text-sage-600 hover:bg-sage-50/50 hover:text-sage-900'
                       }`}
                     >
                       <FolderIcon />
@@ -204,8 +204,8 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </>
         )}
 
-        <p className="px-6 text-xs font-semibold uppercase tracking-wider text-sage-400 mt-6 mb-2">My kitchen</p>
-        <ul className="space-y-0.5 px-3">
+        <p className="px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-sage-400 mt-8 mb-3 font-sans">My kitchen</p>
+        <ul className="space-y-1 px-4">
           {MY_KITCHEN.map((link) => {
             const active = isActive(link.href);
             return (
@@ -214,10 +214,10 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   href={link.href}
                   prefetch={undefined}
                   onClick={handleNavClick}
-                  className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-3 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 rounded-xl py-2 px-3 text-sm font-medium transition-all duration-200 ${
                     active
-                      ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
-                      : 'border-transparent text-sage-600 hover:bg-sage-50 hover:text-sage-900'
+                      ? 'bg-terracotta-50/50 text-terracotta-700 shadow-[inset_2px_0_0_0_#C84B31]'
+                      : 'text-sage-600 hover:bg-sage-50/50 hover:text-sage-900'
                   }`}
                 >
                   {KITCHEN_ICONS[link.label] ?? <BookmarkIcon />}
@@ -230,43 +230,43 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       </nav>
 
       {/* Bottom section: user profile or auth links */}
-      <div className="border-t border-sage-200 p-4">
+      <div className="border-t border-sage-200/60 p-4 bg-sage-50/30">
         {user ? (
           <>
             <Link
               href="/profile"
               onClick={handleNavClick}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sage-700 hover:bg-sage-50 transition-colors"
+              className="flex items-center gap-3 rounded-xl px-3 py-2 text-sage-800 hover:bg-white hover:shadow-sm transition-all duration-200"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-terracotta-100 text-terracotta-700 font-medium text-sm">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-terracotta-100 text-terracotta-700 font-serif text-lg">
                 {user.username?.charAt(0)?.toUpperCase() ?? '?'}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-sage-900">{user.username}</p>
-                <p className="truncate text-xs text-sage-500">Profile</p>
+                <p className="truncate text-[11px] text-sage-500 uppercase tracking-wider font-semibold">Profile</p>
               </div>
               <ChevronRightIcon />
             </Link>
             <button
               onClick={handleLogout}
-              className="mt-2 w-full text-left px-3 py-1.5 text-sm text-sage-600 hover:text-sage-900"
+              className="mt-3 w-full text-left px-4 py-2 text-sm text-sage-500 hover:text-sage-900 hover:bg-white rounded-lg transition-all duration-200"
             >
               Logout
             </button>
           </>
         ) : (
-          <div className="flex flex-col gap-2 px-3">
+          <div className="flex flex-col gap-3 px-3">
             <Link
               href="/register"
               onClick={handleNavClick}
-              className="btn-primary text-center text-sm py-2"
+              className="btn-primary text-center text-sm py-2.5"
             >
               Sign up free
             </Link>
             <Link
               href="/login"
               onClick={handleNavClick}
-              className="btn-secondary text-center text-sm py-2"
+              className="btn-secondary text-center text-sm py-2.5"
             >
               Log in
             </Link>

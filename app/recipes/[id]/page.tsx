@@ -424,21 +424,24 @@ export default function RecipeDetailPage() {
         )}
 
         {!isEditing ? (
-          <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-lg border border-sage-200 p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <h1 className="text-2xl font-semibold text-sage-900">{decodeHtmlEntities(recipe.name)}</h1>
-                  {canEdit && (
+          <div className="animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="mb-10 text-center max-w-4xl mx-auto">
+              <div className="flex flex-col items-center gap-4 mb-6">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-sage-900 leading-tight tracking-tight text-balance">
+                  {decodeHtmlEntities(recipe.name)}
+                </h1>
+                
+                {canEdit && (
+                  <div className="flex items-center gap-2">
                     <select
                       value={getSkillLevelValue(recipe.skill_level_adjusted)}
                       onChange={(e) => handleSkillLevelChange(e.target.value)}
                       disabled={readjusting}
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-terracotta-50 text-terracotta-700 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:bg-terracotta-100 font-sans"
                     >
                       <option value="" disabled={!recipe.source_url}>
-                        {recipe.source_url ? 'No adjustment' : '—'}
+                        {recipe.source_url ? 'Original Recipe' : '—'}
                       </option>
                       {SKILL_LEVELS.map((level) => (
                         <option key={level.value} value={level.value}>
@@ -446,227 +449,267 @@ export default function RecipeDetailPage() {
                         </option>
                       ))}
                     </select>
-                  )}
-                  {!canEdit && recipe.skill_level_adjusted && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-terracotta-100 text-terracotta-800">
-                      {getSkillLevelLabel(recipe.skill_level_adjusted)}
-                    </span>
-                  )}
-                  {readjusting && (
-                    <span className="text-xs text-sage-500">Adjusting...</span>
-                  )}
-                </div>
-                {displayDescription && (
-                  <p className="text-sage-600">{displayDescription}</p>
+                    {readjusting && (
+                      <span className="text-xs text-sage-500 uppercase tracking-wider font-sans">Adjusting...</span>
+                    )}
+                  </div>
+                )}
+                {!canEdit && recipe.skill_level_adjusted && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-terracotta-50 text-terracotta-700 font-sans">
+                    {getSkillLevelLabel(recipe.skill_level_adjusted)}
+                  </span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2 shrink-0">
+
+              {displayDescription && (
+                <p className="text-lg md:text-xl text-sage-600 font-light leading-relaxed mb-8 max-w-3xl mx-auto">
+                  {displayDescription}
+                </p>
+              )}
+
+              {/* Action Bar */}
+              <div className="flex flex-wrap justify-center items-center gap-4 mb-10 border-y border-sage-200/60 py-6">
+                <button onClick={handleStartCooking} className="btn-primary px-8 py-3 text-base shadow-[0_4px_14px_-6px_rgba(200,75,49,0.4)]">
+                  Start cooking
+                </button>
                 <button
                   type="button"
                   onClick={() => setChatOpen(true)}
-                  className="hidden md:flex w-10 h-10 rounded-lg bg-terracotta-600 text-white hover:bg-terracotta-700 items-center justify-center shrink-0"
-                  aria-label="Talk with Cheffle"
+                  className="btn-secondary px-6 py-3"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={24} height={24} className="shrink-0" aria-hidden>
-                    <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
-                    <rect x="9" y="11" width="14" height="12" fill="white" />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={20} height={20} className="shrink-0 mr-2 -ml-1" aria-hidden>
+                    <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="currentColor" />
+                    <rect x="9" y="11" width="14" height="12" fill="currentColor" />
                   </svg>
-                </button>
-                <button onClick={handleStartCooking} className="btn-sage px-4 py-2 text-sm">
-                  Start cooking
+                  Ask Cheffle
                 </button>
                 {canEdit && (
                   <>
-                    <button onClick={() => setIsEditing(true)} className="btn-secondary px-4 py-2 text-sm">
+                    <button onClick={() => setIsEditing(true)} className="btn-ghost">
                       Edit
                     </button>
                     <button
                       onClick={() => setShowDeleteModal(true)}
-                      className="btn-danger px-4 py-2 text-sm"
+                      className="btn-ghost text-coral-600 hover:bg-coral-50"
                     >
                       Delete
                     </button>
                   </>
                 )}
               </div>
+
+              {/* Meta info (Time & Yield) */}
+              <div className="flex flex-wrap justify-center gap-8 md:gap-16 text-sm font-sans uppercase tracking-widest text-sage-500">
+                {recipe.prep_time > 0 && (
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-sage-400">Prep Time</span>
+                    <span className="font-medium text-sage-800">{recipe.prep_time} mins</span>
+                  </div>
+                )}
+                {recipe.cook_time > 0 && (
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-sage-400">Cook Time</span>
+                    <span className="font-medium text-sage-800">{recipe.cook_time} mins</span>
+                  </div>
+                )}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-sage-400">Total Time</span>
+                  <span className="font-medium text-sage-800">{recipe.prep_time + recipe.cook_time} mins</span>
+                </div>
+                {scaleServingsDisplay(recipe.servings ?? null, servingScale) != null && (
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-sage-400">Yield</span>
+                    <span className="font-medium text-sage-800">{scaleServingsDisplay(recipe.servings ?? null, servingScale)} servings</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {recipe.source_url && (
-              <div className="mb-6">
-                <a
-                  href={recipe.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-terracotta-600 hover:text-terracotta-700 break-all"
-                >
-                  View original recipe →
-                </a>
-              </div>
-            )}
+            {/* Split Pane Layout */}
+            <div className="flex flex-col md:flex-row gap-12 lg:gap-24 relative border-t border-sage-200/60 pt-12">
+              
+              {/* Left Column: Ingredients & Organization */}
+              <div className="w-full md:w-1/3 lg:w-[350px] shrink-0 space-y-12">
+                <div className="sticky top-24">
+                  <div className="mb-10">
+                    <div className="flex items-end justify-between mb-6 pb-4 border-b border-sage-200/60">
+                      <h2 className="text-2xl font-serif text-sage-900">Ingredients</h2>
+                      <div className="flex items-center gap-2 bg-sage-50/50 rounded-lg p-1 border border-sage-200/60">
+                        <span className="text-[10px] uppercase tracking-wider text-sage-500 font-semibold px-2">Scale</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={scaleInput}
+                          onChange={(e) => handleScaleChange(e.target.value)}
+                          onBlur={() => setScaleInput(String(servingScale))}
+                          placeholder="1"
+                          className="w-10 bg-white text-center text-sm font-medium text-sage-800 border-none rounded py-0.5 focus:ring-2 focus:ring-terracotta-500"
+                        />
+                        <span className="text-xs text-sage-400 pr-2">×</span>
+                      </div>
+                    </div>
+                    <ul className="space-y-4">
+                      {(recipe.ingredients || []).map((ing, i) => {
+                        const scaled = scaleIngredient(
+                          typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing,
+                          servingScale
+                        );
+                        return (
+                          <li key={i} className="flex items-start gap-3 text-sage-800 text-base leading-relaxed">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-terracotta-300 shrink-0" />
+                            {formatIngredient(scaled)}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
 
-            {/* Organization: favorite, collections, tags */}
-            {canEdit && (
-              <div className="mb-6 space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleFavoriteToggle}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                      isFavorite
-                        ? 'bg-terracotta-50 border-terracotta-300 text-terracotta-700'
-                        : 'border-sage-300 text-sage-600 hover:bg-sage-50'
-                    }`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-4 h-4 ${isFavorite ? 'fill-terracotta-500' : 'fill-none stroke-current'}`} strokeWidth={isFavorite ? 0 : 1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                    </svg>
-                    {isFavorite ? 'Favorited' : 'Favorite'}
-                  </button>
+                  {/* Organization (Collections, Tags) */}
+                  {canEdit && (
+                    <div className="pt-8 border-t border-sage-200/60">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-sage-400 mb-4 font-sans">Organization</h3>
+                      
+                      <div className="space-y-4">
+                        <button
+                          type="button"
+                          onClick={handleFavoriteToggle}
+                          className={`flex w-full items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                            isFavorite
+                              ? 'bg-terracotta-50 text-terracotta-700 shadow-[inset_0_0_0_1px_#F2CDCA]'
+                              : 'bg-white text-sage-600 hover:bg-sage-50 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`w-5 h-5 ${isFavorite ? 'fill-terracotta-500' : 'fill-none stroke-current'}`} strokeWidth={isFavorite ? 0 : 1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                            </svg>
+                            {isFavorite ? 'Saved to Favorites' : 'Add to Favorites'}
+                          </span>
+                        </button>
 
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowCollectionPicker(!showCollectionPicker)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-sage-300 text-sage-600 hover:bg-sage-50 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                        <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
-                      </svg>
-                      Collections
-                    </button>
-                    {showCollectionPicker && (
-                      <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-sage-200 rounded-lg shadow-lg p-3 min-w-[220px]">
-                        {allCollections.length > 0 && (
-                          <div className="space-y-1 mb-2">
-                            {allCollections.map((col) => {
-                              const isIn = recipeCollections.some((rc) => rc.id === col.id);
-                              return (
-                                <label key={col.id} className="flex items-center gap-2 text-sm text-sage-700 cursor-pointer hover:bg-sage-50 px-2 py-1 rounded">
-                                  <input
-                                    type="checkbox"
-                                    checked={isIn}
-                                    onChange={() => isIn ? handleRemoveFromCollection(col.id) : handleAddToCollection(col.id)}
-                                    className="rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-500"
-                                  />
-                                  {col.name}
-                                </label>
-                              );
-                            })}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setShowCollectionPicker(!showCollectionPicker)}
+                            className="flex w-full items-center justify-between px-4 py-3 rounded-xl text-sm font-medium bg-white text-sage-600 hover:bg-sage-50 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-300"
+                          >
+                            <span className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-sage-400">
+                                <path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" />
+                              </svg>
+                              Manage Collections
+                            </span>
+                            <span className="text-xs bg-sage-100 text-sage-600 px-2 py-0.5 rounded-full">{recipeCollections.length}</span>
+                          </button>
+                          {showCollectionPicker && (
+                            <div className="absolute top-full left-0 right-0 mt-2 z-20 bg-white border border-sage-200/60 rounded-xl shadow-lg p-4">
+                              {allCollections.length > 0 && (
+                                <div className="space-y-1 mb-4 max-h-48 overflow-y-auto pr-2">
+                                  {allCollections.map((col) => {
+                                    const isIn = recipeCollections.some((rc) => rc.id === col.id);
+                                    return (
+                                      <label key={col.id} className="flex items-center gap-3 text-sm text-sage-700 cursor-pointer hover:bg-sage-50 px-3 py-2 rounded-lg transition-colors">
+                                        <input
+                                          type="checkbox"
+                                          checked={isIn}
+                                          onChange={() => isIn ? handleRemoveFromCollection(col.id) : handleAddToCollection(col.id)}
+                                          className="rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-500 w-4 h-4"
+                                        />
+                                        {col.name}
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={newCollectionName}
+                                  onChange={(e) => setNewCollectionName(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateAndAddCollection())}
+                                  placeholder="New collection name"
+                                  className="flex-1 px-3 py-2 bg-sage-50/50 border border-sage-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-terracotta-500 focus:border-transparent outline-none transition-all"
+                                />
+                                <button type="button" onClick={handleCreateAndAddCollection} className="px-4 py-2 bg-sage-800 text-white font-medium rounded-lg hover:bg-sage-900 transition-colors text-sm">
+                                  Add
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tag Input */}
+                        <div className="bg-white rounded-xl shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)] p-4">
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {recipeTags.map((tag) => (
+                              <span key={tag.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-sage-100 text-sage-700 font-sans">
+                                {tag.name}
+                                <button type="button" onClick={() => handleRemoveTag(tag.id)} className="text-sage-400 hover:text-sage-700 hover:bg-sage-200 rounded-sm">&times;</button>
+                              </span>
+                            ))}
                           </div>
-                        )}
-                        <div className="flex gap-1">
                           <input
                             type="text"
-                            value={newCollectionName}
-                            onChange={(e) => setNewCollectionName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleCreateAndAddCollection())}
-                            placeholder="New collection..."
-                            className="flex-1 px-2 py-1 border border-sage-300 rounded text-sm focus:ring-1 focus:ring-terracotta-500"
+                            value={newTagInput}
+                            onChange={(e) => setNewTagInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                            placeholder="Add tag (e.g. Vegetarian, Quick)"
+                            className="w-full px-3 py-2 bg-sage-50/50 border border-sage-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-terracotta-500 focus:border-transparent outline-none transition-all"
                           />
-                          <button type="button" onClick={handleCreateAndAddCollection} className="text-xs px-2 py-1 bg-terracotta-600 text-white rounded hover:bg-terracotta-700">
-                            Add
-                          </button>
                         </div>
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
+                  )}
 
-                {/* Collection badges */}
-                {recipeCollections.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {recipeCollections.map((col) => (
-                      <span key={col.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-sage-100 text-sage-700">
-                        {col.name}
-                        <button type="button" onClick={() => handleRemoveFromCollection(col.id)} className="text-sage-400 hover:text-sage-700">&times;</button>
-                      </span>
+                  {recipe.source_url && (
+                    <div className="mt-8 pt-8 border-t border-sage-200/60 text-center">
+                      <a
+                        href={recipe.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-sage-500 hover:text-terracotta-600 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                        View Original Recipe
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Instructions */}
+              <div className="flex-1 pb-24">
+                <h2 className="text-2xl font-serif text-sage-900 mb-8 pb-4 border-b border-sage-200/60">Instructions</h2>
+                {instructionSteps.length > 0 ? (
+                  <div className="space-y-10">
+                    {instructionSteps.map((step, i) => (
+                      <div key={i} className="flex gap-6 group">
+                        <div className="flex-shrink-0 flex flex-col items-center">
+                          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-sage-100 text-sage-600 font-serif text-lg font-medium group-hover:bg-terracotta-100 group-hover:text-terracotta-700 transition-colors">
+                            {i + 1}
+                          </span>
+                          {i !== instructionSteps.length - 1 && (
+                            <div className="w-px h-full bg-sage-200/60 my-2" />
+                          )}
+                        </div>
+                        <p className="text-lg text-sage-800 leading-relaxed pt-0.5">
+                          {decodeHtmlEntities(step)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="prose prose-sage prose-lg max-w-none text-sage-800">
+                    {decodeHtmlEntities(recipe.instructions).split('\n').map((paragraph, i) => (
+                      <p key={i}>{paragraph}</p>
                     ))}
                   </div>
                 )}
-
-                {/* Tags */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {recipeTags.map((tag) => (
-                    <span key={tag.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-terracotta-50 text-terracotta-700">
-                      {tag.name}
-                      <button type="button" onClick={() => handleRemoveTag(tag.id)} className="text-terracotta-400 hover:text-terracotta-700">&times;</button>
-                    </span>
-                  ))}
-                  <div className="inline-flex items-center gap-1">
-                    <input
-                      type="text"
-                      value={newTagInput}
-                      onChange={(e) => setNewTagInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                      placeholder="Add tag..."
-                      className="px-2 py-0.5 border border-sage-200 rounded-full text-xs w-24 focus:outline-none focus:ring-1 focus:ring-terracotta-500 focus:w-32 transition-all"
-                    />
-                  </div>
-                </div>
               </div>
-            )}
-
-            <div className="flex flex-wrap gap-6 mb-6 text-sm text-sage-600">
-              <span>Prep: {recipe.prep_time} min</span>
-              <span>Cook: {recipe.cook_time} min</span>
-              <span>Total: {recipe.prep_time + recipe.cook_time} min</span>
-              {scaleServingsDisplay(recipe.servings ?? null, servingScale) != null && (
-                <span>Serves {scaleServingsDisplay(recipe.servings ?? null, servingScale)}</span>
-              )}
-            </div>
-
-            <div className="mb-6">
-              <div className="flex flex-wrap items-center gap-3 mb-3">
-                <h2 className="text-lg font-medium text-sage-900">Ingredients</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-sage-500">Scale:</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={scaleInput}
-                    onChange={(e) => handleScaleChange(e.target.value)}
-                    onBlur={() => setScaleInput(String(servingScale))}
-                    placeholder="1"
-                    title="Scale ingredients by this factor (e.g. 2 for double, 0.5 for half)"
-                    className="w-14 px-2 py-0.5 text-sm border border-sage-300 rounded focus:outline-none focus:ring-1 focus:ring-terracotta-500 focus:border-terracotta-500"
-                  />
-                  <span className="text-xs text-sage-500">×</span>
-                  <span className="text-xs text-sage-400" title="Scale ingredients by this factor (e.g. 2 for double, 0.5 for half)">
-                    (multiplier)
-                  </span>
-                </div>
-              </div>
-              <ul className="space-y-2">
-                {(recipe.ingredients || []).map((ing, i) => {
-                  const scaled = scaleIngredient(
-                    typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing,
-                    servingScale
-                  );
-                  return (
-                    <li key={i} className="text-sage-700">
-                      {formatIngredient(scaled)}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            <div>
-              <h2 className="text-lg font-medium text-sage-900 mb-3">Instructions</h2>
-              {instructionSteps.length > 0 ? (
-                <ol className="list-decimal list-inside space-y-3 text-sage-700">
-                  {instructionSteps.map((step, i) => (
-                    <li key={i} className="pl-2">
-                      {decodeHtmlEntities(step)}
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <div className="whitespace-pre-wrap text-sage-700">{decodeHtmlEntities(recipe.instructions)}</div>
-              )}
             </div>
           </div>
-        </div>
         ) : (
           <div className="max-w-3xl mx-auto">
           <form onSubmit={handleUpdate} className="bg-white rounded-lg border border-sage-200 p-6 space-y-6">

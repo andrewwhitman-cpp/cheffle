@@ -52,35 +52,35 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cream-50 via-cream-100 to-sage-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-sm border border-sage-200 p-8 space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-sage-200/60 p-8 sm:p-12 space-y-8">
           <div className="text-center">
             <Link
               href="/"
-              className="inline-block text-xl font-semibold tracking-tight text-terracotta-600 hover:text-terracotta-700 mb-6 transition-colors"
+              className="inline-block text-2xl font-serif font-semibold tracking-tight text-terracotta-600 hover:text-terracotta-700 mb-6 transition-colors"
             >
               Cheffle
             </Link>
-            <h2 className="text-3xl font-semibold text-sage-900 mb-2 tracking-tight">
-              Sign in to Cheffle
+            <h2 className="text-3xl font-serif text-sage-900 mb-3 tracking-tight">
+              Welcome back
             </h2>
-            <p className="text-sm text-sage-600">
-              Or{' '}
-              <Link href="/register" className="font-medium text-terracotta-600 hover:text-terracotta-700 transition-colors">
-                create a new account
+            <p className="text-sm text-sage-600 font-light">
+              Don't have an account?{' '}
+              <Link href="/register" className="font-medium text-terracotta-600 hover:text-terracotta-700 transition-colors underline decoration-terracotta-200 underline-offset-4">
+                Sign up
               </Link>
             </p>
           </div>
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-coral-50 border-l-4 border-coral-500 text-coral-800 px-4 py-3 rounded-md">
+              <div className="bg-coral-50 border border-coral-200 text-coral-800 px-4 py-3 rounded-xl text-sm text-center">
                 {error}
               </div>
             )}
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-sage-700 mb-2">
+                <label htmlFor="username" className="block text-xs font-bold uppercase tracking-widest text-sage-500 font-sans mb-2 pl-1">
                   Username
                 </label>
                 <input
@@ -88,14 +88,14 @@ function LoginForm() {
                   name="username"
                   type="text"
                   required
-                  className="w-full px-4 py-3 border border-sage-300 rounded-lg text-sage-900 bg-white placeholder-sage-400 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 transition"
+                  className="w-full px-5 py-3.5 border border-sage-300 rounded-xl text-sage-900 bg-sage-50/30 placeholder-sage-400 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 focus:bg-white transition-all duration-300"
                   placeholder="Enter your username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-sage-700 mb-2">
+                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-widest text-sage-500 font-sans mb-2 pl-1">
                   Password
                 </label>
                 <input
@@ -103,7 +103,7 @@ function LoginForm() {
                   name="password"
                   type="password"
                   required
-                  className="w-full px-4 py-3 border border-sage-300 rounded-lg text-sage-900 bg-white placeholder-sage-400 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 transition"
+                  className="w-full px-5 py-3.5 border border-sage-300 rounded-xl text-sage-900 bg-sage-50/30 placeholder-sage-400 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 focus:bg-white transition-all duration-300"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -111,11 +111,11 @@ function LoginForm() {
               </div>
             </div>
 
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full justify-center py-3 px-4 text-base"
+                className="btn-primary w-full justify-center py-3.5 text-base shadow-[0_4px_14px_-6px_rgba(200,75,49,0.4)]"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>

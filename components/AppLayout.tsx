@@ -102,18 +102,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const profileHref = user ? '/profile' : '/login';
 
   return (
-    <div className="flex min-h-screen bg-cream-50">
+    <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar isOpen={false} onClose={() => {}} />
       <div className="flex flex-1 flex-col pl-0 md:pl-64 min-w-0">
         {/* Mobile header */}
-        <header className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-center border-b border-sage-200 bg-white px-4">
+        <header className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-center border-b border-sage-200/60 bg-white/80 backdrop-blur-md px-4">
           <Link href="/" className="flex items-center gap-2 min-w-0 justify-center" prefetch={false}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={28} height={28} className="shrink-0 rounded-md" aria-hidden>
-              <rect width="32" height="32" rx="6" fill="#dd4f32" />
+              <rect width="32" height="32" rx="6" fill="#C84B31" />
               <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
               <rect x="9" y="11" width="14" height="12" fill="white" />
             </svg>
-            <span className="text-lg font-semibold tracking-tight text-terracotta-600 truncate">Cheffle</span>
+            <span className="text-xl font-serif font-semibold tracking-tight text-terracotta-600 truncate">Cheffle</span>
           </Link>
         </header>
         <main className="flex-1 overflow-auto flex flex-col md:flex-row pb-24 md:pb-0">
@@ -125,13 +125,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
           )}
         </main>
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white pb-[env(safe-area-inset-bottom)]" aria-label="Main navigation">
-          <div className="relative border-t border-sage-200">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)]" aria-label="Main navigation">
+          <div className="relative border-t border-sage-200/60 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
             {/* FAB - raised above the bar */}
             <button
               type="button"
               onClick={handleFabClick}
-              className="absolute left-1/2 -translate-x-1/2 -top-6 w-12 h-12 rounded-full bg-terracotta-600 text-white shadow-lg hover:bg-terracotta-700 active:scale-95 transition-all flex items-center justify-center overflow-hidden"
+              className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full bg-terracotta-600 text-white shadow-[0_8px_20px_-6px_rgba(200,75,49,0.4)] hover:bg-terracotta-700 active:scale-95 transition-all flex items-center justify-center overflow-hidden border-4 border-white/90 backdrop-blur-md"
               aria-label={recipeId ? 'Talk with Cheffle' : 'Add recipe'}
             >
               <CheffleIcon />
