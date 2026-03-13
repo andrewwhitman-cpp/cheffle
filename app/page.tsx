@@ -61,7 +61,7 @@ function GuestHome() {
   };
 
   return (
-    <div className="px-6 py-8 max-w-6xl mx-auto">
+    <div className="px-4 sm:px-6 py-8 max-w-6xl mx-auto">
       {/* Welcome hero */}
       <div className="mb-10">
         <h1 className="text-3xl font-semibold text-sage-900 mb-2">
@@ -78,13 +78,13 @@ function GuestHome() {
 
       {/* Parse URL form */}
       <div className="mb-8">
-        <form onSubmit={handleParse} className="flex gap-2">
+        <form onSubmit={handleParse} className="flex flex-col sm:flex-row gap-2">
           <input
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Paste a recipe URL to try it out"
-            className="flex-1 px-4 py-3 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white transition-shadow"
+            className="flex-1 min-w-0 px-4 py-3 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500 bg-white transition-shadow"
             disabled={parsing}
           />
           <button

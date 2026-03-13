@@ -32,14 +32,6 @@ function BookIcon() {
   );
 }
 
-function HeartIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
-      <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-    </svg>
-  );
-}
-
 function FolderIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
@@ -56,10 +48,10 @@ function BookmarkIcon() {
   );
 }
 
-function BookOpenIcon() {
+function MagnifyingGlassIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
-      <path d="M11.25 4.533A9.707 9.707 0 006 3a9.735 9.735 0 00-3.25.555.75.75 0 00-.5.707v14.25a.75.75 0 001 .707A8.237 8.237 0 016 18.75c1.995 0 3.823.707 5.25 1.886V4.533zM12.75 20.636A8.214 8.214 0 0118 18.75c.966 0 1.89.166 2.75.47a.75.75 0 001-.708V4.262a.75.75 0 00-.5-.707A9.735 9.735 0 0018 3a9.707 9.707 0 00-5.25 1.533v16.103z" />
+      <path fillRule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z" clipRule="evenodd" />
     </svg>
   );
 }
@@ -72,8 +64,16 @@ function ChevronRightIcon() {
   );
 }
 
+function XMarkIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+      <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 const KITCHEN_ICONS: Record<string, React.ReactNode> = {
-  'Glossary': <BookOpenIcon />,
+  'Glossary': <MagnifyingGlassIcon />,
 };
 
 interface SidebarCollection {
@@ -82,7 +82,12 @@ interface SidebarCollection {
   recipe_count: number;
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -108,19 +113,40 @@ export default function Sidebar() {
   };
 
   const activeCollectionId = pathname === '/recipes' ? searchParams.get('collection') : null;
-  const isFavoritesActive = pathname === '/recipes' && searchParams.get('favorite') === '1';
+
+  const handleNavClick = () => onClose?.();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 shrink-0 border-r border-sage-200 bg-white flex flex-col">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-sage-100">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={32} height={32} className="shrink-0 rounded-md" aria-hidden>
-          <rect width="32" height="32" rx="6" fill="#dd4f32" />
-          <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
-          <rect x="9" y="11" width="14" height="12" fill="white" />
-        </svg>
-        <span className="text-xl font-semibold tracking-tight text-terracotta-600">Cheffle</span>
-      </div>
+    <>
+      {/* Mobile backdrop - only when sidebar open on mobile */}
+      <div
+        aria-hidden
+        className={`fixed inset-0 z-40 bg-sage-900/50 md:hidden transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        onClick={onClose}
+      />
+
+      <aside
+        className={`fixed left-0 top-0 z-50 h-screen w-64 shrink-0 border-r border-sage-200 bg-white flex flex-col transition-transform duration-200 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      >
+        {/* Logo + mobile close button */}
+        <div className="flex h-16 items-center justify-between gap-2 px-6 border-b border-sage-100">
+          <div className="flex items-center gap-2 min-w-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={32} height={32} className="shrink-0 rounded-md" aria-hidden>
+              <rect width="32" height="32" rx="6" fill="#dd4f32" />
+              <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
+              <rect x="9" y="11" width="14" height="12" fill="white" />
+            </svg>
+            <span className="text-xl font-semibold tracking-tight text-terracotta-600">Cheffle</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="md:hidden p-2 -m-2 rounded-lg text-sage-600 hover:bg-sage-100 hover:text-sage-900 transition-colors"
+            aria-label="Close menu"
+          >
+            <XMarkIcon />
+          </button>
+        </div>
 
       {/* Main menu */}
       <nav className="flex-1 overflow-y-auto py-4">
@@ -134,6 +160,7 @@ export default function Sidebar() {
                 <Link
                   href={link.href}
                   prefetch={link.href === '/' ? false : undefined}
+                  onClick={handleNavClick}
                   className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-3 text-sm font-medium transition-colors ${
                     active
                       ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
@@ -146,21 +173,6 @@ export default function Sidebar() {
               </li>
             );
           })}
-          {user && (
-            <li>
-              <Link
-                href="/recipes?favorite=1"
-                className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-3 text-sm font-medium transition-colors ${
-                  isFavoritesActive
-                    ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
-                    : 'border-transparent text-sage-600 hover:bg-sage-50 hover:text-sage-900'
-                }`}
-              >
-                <HeartIcon />
-                Favorites
-              </Link>
-            </li>
-          )}
         </ul>
 
         {/* Collections */}
@@ -174,6 +186,7 @@ export default function Sidebar() {
                   <li key={col.id}>
                     <Link
                       href={`/recipes?collection=${col.id}`}
+                      onClick={handleNavClick}
                       className={`flex items-center gap-3 rounded-lg border-l-2 py-2 pr-3 pl-3 text-sm font-medium transition-colors ${
                         active
                           ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
@@ -200,6 +213,7 @@ export default function Sidebar() {
                 <Link
                   href={link.href}
                   prefetch={undefined}
+                  onClick={handleNavClick}
                   className={`flex items-center gap-3 rounded-lg border-l-2 py-2.5 pr-3 pl-3 text-sm font-medium transition-colors ${
                     active
                       ? 'bg-terracotta-50 text-terracotta-700 border-terracotta-500'
@@ -221,6 +235,7 @@ export default function Sidebar() {
           <>
             <Link
               href="/profile"
+              onClick={handleNavClick}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sage-700 hover:bg-sage-50 transition-colors"
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-terracotta-100 text-terracotta-700 font-medium text-sm">
@@ -243,12 +258,14 @@ export default function Sidebar() {
           <div className="flex flex-col gap-2 px-3">
             <Link
               href="/register"
+              onClick={handleNavClick}
               className="btn-primary text-center text-sm py-2"
             >
               Sign up free
             </Link>
             <Link
               href="/login"
+              onClick={handleNavClick}
               className="btn-secondary text-center text-sm py-2"
             >
               Log in
@@ -257,5 +274,6 @@ export default function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   );
 }

@@ -500,8 +500,8 @@ export default function RecipeDetailPage() {
         {!isEditing ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white rounded-lg border border-sage-200 p-6">
-            <div className="flex justify-between items-start mb-6">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h1 className="text-2xl font-semibold text-sage-900">{decodeHtmlEntities(recipe.name)}</h1>
                   {canEdit && (
@@ -534,7 +534,7 @@ export default function RecipeDetailPage() {
                   <p className="text-sage-600">{displayDescription}</p>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 shrink-0">
                 <button onClick={handleStartCooking} className="btn-sage px-4 py-2 text-sm">
                   Start cooking
                 </button>
