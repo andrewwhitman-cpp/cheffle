@@ -331,8 +331,8 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
           {sheetContent}
         </div>
       </div>
-      {/* Desktop: side panel */}
-      <div className="hidden md:flex md:w-[420px] md:min-w-[420px] md:shrink-0 md:flex-col md:min-h-0 md:border-l md:border-sage-200 md:bg-white md:overflow-hidden">
+      {/* Desktop: side panel - sticky + fixed height so input stays in view */}
+      <div className="hidden md:flex md:w-[420px] md:min-w-[420px] md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 md:self-start md:border-l md:border-sage-200 md:bg-white md:overflow-hidden">
         {sheetContent}
       </div>
     </>

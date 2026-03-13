@@ -424,7 +424,7 @@ export default function RecipeDetailPage() {
         )}
 
         {!isEditing ? (
-          <div className="max-w-3xl">
+          <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-lg border border-sage-200 p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
               <div className="min-w-0">
@@ -668,6 +668,7 @@ export default function RecipeDetailPage() {
           </div>
         </div>
         ) : (
+          <div className="max-w-3xl mx-auto">
           <form onSubmit={handleUpdate} className="bg-white rounded-lg border border-sage-200 p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium text-sage-700 mb-2">Recipe name *</label>
@@ -812,6 +813,7 @@ export default function RecipeDetailPage() {
               </button>
             </div>
           </form>
+          </div>
         )}
 
         {canEdit && (
