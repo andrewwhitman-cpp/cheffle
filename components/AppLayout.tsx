@@ -116,8 +116,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <span className="text-lg font-semibold tracking-tight text-terracotta-600 truncate">Cheffle</span>
           </Link>
         </header>
-        <main className="flex-1 overflow-auto pb-24 md:pb-0">
-          {children}
+        <main className="flex-1 overflow-auto flex flex-col md:flex-row pb-24 md:pb-0">
+          <div className="flex-1 min-w-0 overflow-auto">
+            {children}
+          </div>
+          {chatOpen && recipeId && (
+            <RecipeChatSheet recipeId={recipeId} onClose={() => setChatOpen(false)} />
+          )}
         </main>
         {/* Mobile bottom nav */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white pb-[env(safe-area-inset-bottom)]" aria-label="Main navigation">
@@ -173,9 +178,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </nav>
       </div>
-      {chatOpen && recipeId && (
-        <RecipeChatSheet recipeId={recipeId} onClose={() => setChatOpen(false)} />
-      )}
     </div>
   );
 }

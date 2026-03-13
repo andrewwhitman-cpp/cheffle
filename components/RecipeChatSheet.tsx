@@ -171,17 +171,8 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
     setDragY(0);
   }, [onClose]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end md:flex md:items-center md:justify-center">
-      <div
-        className="bg-sage-900/30 flex-1 md:flex-none md:absolute md:inset-0"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div
-        className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden md:max-w-lg md:w-full md:relative md:mx-4"
-        style={{ transform: `translateY(${dragY}px)` }}
-      >
+  const sheetContent = (
+    <>
         {/* Drag handle + header */}
         <div
           className="relative flex items-center justify-between px-4 pt-4 pb-3 border-b border-sage-200 shrink-0 touch-none md:pt-4"
@@ -321,7 +312,29 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
             </button>
           </form>
         </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile: overlay */}
+      <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+        <div
+          className="bg-sage-900/30 flex-1"
+          onClick={onClose}
+          aria-hidden
+        />
+        <div
+          className="bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+          style={{ transform: `translateY(${dragY}px)` }}
+        >
+          {sheetContent}
+        </div>
       </div>
-    </div>
+      {/* Desktop: side panel */}
+      <div className="hidden md:flex md:w-[420px] md:min-w-[420px] md:shrink-0 md:flex-col md:min-h-0 md:border-l md:border-sage-200 md:bg-white md:overflow-hidden">
+        {sheetContent}
+      </div>
+    </>
   );
 }
