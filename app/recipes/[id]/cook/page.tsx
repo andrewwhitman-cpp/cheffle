@@ -150,9 +150,9 @@ export default function CookPage() {
 
   return (
     <ProtectedRoute>
-      <div className="fixed inset-0 z-50 bg-sage-900 text-sage-50 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] md:pl-64 transition-all">
+      <div className="fixed inset-0 z-[60] bg-sage-900 text-sage-50 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-all">
         {/* Progress Bar */}
-        <div className="h-1.5 w-full bg-sage-800 absolute top-0 left-0 right-0 z-10 md:left-64">
+        <div className="h-1.5 w-full bg-sage-800 absolute top-0 left-0 right-0 z-10">
           <div 
             className="h-full bg-terracotta-500 transition-all duration-500 ease-out" 
             style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }} 
