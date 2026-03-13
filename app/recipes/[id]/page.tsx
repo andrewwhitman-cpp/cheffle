@@ -84,6 +84,7 @@ export default function RecipeDetailPage() {
   const [newTagInput, setNewTagInput] = useState('');
   const [newCollectionName, setNewCollectionName] = useState('');
   const [showCollectionPicker, setShowCollectionPicker] = useState(false);
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
 
   const parseScaleInput = (value: string): number | null => {
     const trimmed = value.trim();
@@ -433,24 +434,60 @@ export default function RecipeDetailPage() {
                 </h1>
                 
                 {canEdit && (
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={getSkillLevelValue(recipe.skill_level_adjusted)}
-                      onChange={(e) => handleSkillLevelChange(e.target.value)}
+                  <div className="flex items-center justify-center gap-2 relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowSkillDropdown(!showSkillDropdown)}
                       disabled={readjusting}
-                      className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-terracotta-50 text-terracotta-700 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:bg-terracotta-100 font-sans"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-terracotta-50 text-terracotta-700 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-terracotta-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:bg-terracotta-100 font-sans"
                     >
-                      <option value="" disabled={!recipe.source_url}>
-                        {recipe.source_url ? 'Original Recipe' : '—'}
-                      </option>
-                      {SKILL_LEVELS.map((level) => (
-                        <option key={level.value} value={level.value}>
-                          Adjusted for {level.label}
-                        </option>
-                      ))}
-                    </select>
+                      {getSkillLevelValue(recipe.skill_level_adjusted) ? `Adjusted for ${getSkillLevelLabel(recipe.skill_level_adjusted)}` : (recipe.source_url ? 'Original Recipe' : '—')}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={`w-3.5 h-3.5 transition-transform duration-200 ${showSkillDropdown ? 'rotate-180' : ''}`}>
+                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {showSkillDropdown && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowSkillDropdown(false)} aria-hidden="true" />
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-20 w-56 bg-white border border-sage-200/60 rounded-xl shadow-lg py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <button
+                            type="button"
+                            disabled={!recipe.source_url}
+                            onClick={() => { handleSkillLevelChange(''); setShowSkillDropdown(false); }}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors ${getSkillLevelValue(recipe.skill_level_adjusted) === '' ? 'bg-terracotta-50 text-terracotta-700' : 'text-sage-700 hover:bg-sage-50'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <span>{recipe.source_url ? 'Original Recipe' : '—'}</span>
+                            {getSkillLevelValue(recipe.skill_level_adjusted) === '' && (
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-terracotta-600">
+                                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </button>
+                          {SKILL_LEVELS.map((level) => {
+                            const isActive = getSkillLevelValue(recipe.skill_level_adjusted) === level.value;
+                            return (
+                              <button
+                                key={level.value}
+                                type="button"
+                                onClick={() => { handleSkillLevelChange(level.value); setShowSkillDropdown(false); }}
+                                className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-terracotta-50 text-terracotta-700' : 'text-sage-700 hover:bg-sage-50'}`}
+                              >
+                                <span>Adjusted for {level.label}</span>
+                                {isActive && (
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-terracotta-600">
+                                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                    
                     {readjusting && (
-                      <span className="text-xs text-sage-500 uppercase tracking-wider font-sans">Adjusting...</span>
+                      <span className="text-xs text-sage-500 uppercase tracking-wider font-sans absolute left-full ml-3 whitespace-nowrap">Adjusting...</span>
                     )}
                   </div>
                 )}
