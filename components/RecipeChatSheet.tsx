@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useRecipeChatContext } from '@/contexts/RecipeChatContext';
 import { authFetch } from '@/lib/auth-fetch';
@@ -22,6 +23,8 @@ function XMarkIcon() {
 }
 
 export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetProps) {
+  const pathname = usePathname();
+  const isCookMode = pathname?.endsWith('/cook');
   const { requireAuth } = useAuthGate();
   const { cookingContext } = useRecipeChatContext();
   const {
@@ -175,30 +178,30 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
     <>
         {/* Drag handle + header */}
         <div
-          className="relative flex items-center justify-between px-4 pt-4 pb-3 border-b border-sage-200 shrink-0 touch-none md:pt-4"
+          className="relative flex items-center justify-between px-6 pt-5 pb-4 border-b border-sage-200/60 shrink-0 touch-none md:pt-6"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="w-12 h-1 rounded-full bg-sage-300 absolute left-1/2 -translate-x-1/2 top-2 md:hidden" />
-          <div className="w-16 flex justify-start">
+          <div className="w-12 h-1.5 rounded-full bg-sage-200 absolute left-1/2 -translate-x-1/2 top-2.5 md:hidden" />
+          <div className="w-20 flex justify-start">
             {chatMessages.length > 0 && (
               <button
                 type="button"
                 onClick={clearChat}
                 disabled={chatLoading}
-                className="text-sm text-sage-600 hover:text-sage-800 disabled:opacity-50 disabled:cursor-not-allowed py-1"
+                className="text-xs font-bold uppercase tracking-widest text-sage-500 hover:text-sage-900 disabled:opacity-50 disabled:cursor-not-allowed py-1 font-sans transition-colors"
               >
                 New chat
               </button>
             )}
           </div>
-          <h2 className="flex-1 text-lg font-medium text-sage-900 text-center">Talk with Cheffle</h2>
-          <div className="w-16 flex justify-end">
+          <h2 className="flex-1 text-2xl font-serif text-sage-900 text-center">Talk with Cheffle</h2>
+          <div className="w-20 flex justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="p-2 -m-2 rounded-lg text-sage-600 hover:bg-sage-100 hover:text-sage-900 shrink-0"
+              className="p-2 -mr-2 rounded-full text-sage-400 hover:bg-sage-50 hover:text-sage-900 shrink-0 transition-colors"
               aria-label="Close"
             >
               <XMarkIcon />
@@ -294,19 +297,19 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
             </div>
           )}
 
-          <form onSubmit={handleChatSubmit} className="flex gap-2 shrink-0">
+          <form onSubmit={handleChatSubmit} className="flex gap-3 shrink-0 pt-2">
             <input
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="What would you like to change?"
-              className="flex-1 min-w-0 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-sage-900 placeholder:text-sage-400"
+              className="flex-1 min-w-0 px-5 py-3 border border-sage-200/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-sage-900 placeholder:text-sage-400 bg-sage-50/50 focus:bg-white transition-all shadow-sm"
               disabled={chatLoading}
             />
             <button
               type="submit"
               disabled={chatLoading || !chatInput.trim()}
-              className="btn-primary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary px-6 py-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl shadow-sm"
             >
               Send
             </button>
@@ -318,23 +321,33 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
   return (
     <>
       {/* Mobile: overlay */}
-      <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+      <div className={`fixed inset-0 flex flex-col justify-end md:hidden ${isCookMode ? 'z-[70]' : 'z-50'}`}>
         <div
-          className="bg-sage-900/30 flex-1"
+          className="bg-sage-900/30 flex-1 backdrop-blur-sm transition-opacity"
           onClick={onClose}
           aria-hidden
         />
         <div
-          className="bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+          className="bg-white rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)] flex flex-col max-h-[85vh] overflow-hidden"
           style={{ transform: `translateY(${dragY}px)` }}
         >
           {sheetContent}
         </div>
       </div>
-      {/* Desktop: side panel - sticky + fixed height so input stays in view */}
-      <div className="hidden md:flex md:w-[420px] md:min-w-[420px] md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 md:self-start md:border-l md:border-sage-200 md:bg-white md:overflow-hidden">
-        {sheetContent}
-      </div>
+      
+      {/* Desktop */}
+      {isCookMode ? (
+        <div className="hidden md:flex fixed inset-0 z-[70] justify-end">
+          <div className="absolute inset-0 bg-sage-900/20 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
+          <div className="relative w-[420px] h-screen bg-white shadow-2xl flex flex-col animate-in slide-in-from-right-full duration-300">
+            {sheetContent}
+          </div>
+        </div>
+      ) : (
+        <div className="hidden md:flex md:w-[420px] md:min-w-[420px] md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 md:self-start md:border-l md:border-sage-200/60 md:bg-white md:shadow-[-8px_0_30px_rgba(0,0,0,0.02)] md:overflow-hidden animate-in slide-in-from-right-8 duration-500">
+          {sheetContent}
+        </div>
+      )}
     </>
   );
 }
