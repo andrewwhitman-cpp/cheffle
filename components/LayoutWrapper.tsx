@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { RecipeChatProvider } from '@/contexts/RecipeChatContext';
 import AppLayout from './AppLayout';
 
 const AUTH_PATHS = ['/login', '/register', '/onboarding'];
@@ -24,5 +25,9 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     );
   }
 
-  return <AppLayout>{children}</AppLayout>;
+  return (
+    <RecipeChatProvider>
+      <AppLayout>{children}</AppLayout>
+    </RecipeChatProvider>
+  );
 }

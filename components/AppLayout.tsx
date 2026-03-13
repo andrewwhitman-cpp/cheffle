@@ -4,7 +4,9 @@ import { useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRecipeChatContext } from '@/contexts/RecipeChatContext';
 import Sidebar from './Sidebar';
+import RecipeChatSheet from './RecipeChatSheet';
 
 function TabHomeIcon({ active }: { active: boolean }) {
   if (active) return (
@@ -59,10 +61,11 @@ function TabProfileIcon({ active }: { active: boolean }) {
   );
 }
 
-function PlusIcon() {
+function CheffleIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={28} height={28} className="shrink-0" aria-hidden>
+      <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
+      <rect x="9" y="11" width="14" height="12" fill="white" />
     </svg>
   );
 }
@@ -73,18 +76,23 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
+  const { chatOpen, setChatOpen, recipeId } = useRecipeChatContext();
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleAddClick = useCallback(() => {
-    const urlInput = document.querySelector('input[type="url"]') as HTMLInputElement | null;
-    if (urlInput) {
-      urlInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => urlInput.focus(), 300);
+  const handleFabClick = useCallback(() => {
+    if (recipeId) {
+      setChatOpen(true);
     } else {
-      router.push('/');
+      const urlInput = document.querySelector('input[type="url"]') as HTMLInputElement | null;
+      if (urlInput) {
+        urlInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => urlInput.focus(), 300);
+      } else {
+        router.push('/');
+      }
     }
-  }, [router]);
+  }, [recipeId, setChatOpen, router]);
 
   const isTabActive = (href: string) => {
     if (href === '/') return pathname === '/';
@@ -117,11 +125,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* FAB - raised above the bar */}
             <button
               type="button"
-              onClick={handleAddClick}
-              className="absolute left-1/2 -translate-x-1/2 -top-6 w-12 h-12 rounded-full bg-terracotta-600 text-white shadow-lg hover:bg-terracotta-700 active:scale-95 transition-all flex items-center justify-center"
-              aria-label="Add recipe"
+              onClick={handleFabClick}
+              className="absolute left-1/2 -translate-x-1/2 -top-6 w-12 h-12 rounded-full bg-terracotta-600 text-white shadow-lg hover:bg-terracotta-700 active:scale-95 transition-all flex items-center justify-center overflow-hidden"
+              aria-label={recipeId ? 'Talk with Cheffle' : 'Add recipe'}
             >
-              <PlusIcon />
+              <CheffleIcon />
             </button>
 
             {/* Tab bar */}
@@ -165,6 +173,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </nav>
       </div>
+      {chatOpen && recipeId && (
+        <RecipeChatSheet recipeId={recipeId} onClose={() => setChatOpen(false)} />
+      )}
     </div>
   );
 }

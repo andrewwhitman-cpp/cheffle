@@ -1,17 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
+import { useRecipeChatContext } from '@/contexts/RecipeChatContext';
 import Link from 'next/link';
 import { authFetch } from '@/lib/auth-fetch';
 import { decodeHtmlEntities, normalizeInstructions, parseInstructionsToSteps } from '@/lib/recipe-display';
-import { getIngredientDiff, getTextDiff } from '@/lib/recipe-diff';
 import { scaleIngredient } from '@/lib/ingredient-parser';
 import { SKILL_LEVELS, getSkillLevelLabel, getSkillLevelValue } from '@/lib/skill-levels';
 import { scaleServingsDisplay } from '@/lib/servings-utils';
-import { useRecipeChat } from '@/hooks/useRecipeChat';
 import ConfirmModal from '@/components/ConfirmModal';
 import { isDemoRecipe, getDemoRecipe } from '@/lib/demo-recipes';
 
@@ -52,6 +51,7 @@ export default function RecipeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { setChatOpen } = useRecipeChatContext();
   const { requireAuth } = useAuthGate();
   const recipeId = params.id as string;
   const isDemo = isDemoRecipe(recipeId);
@@ -71,18 +71,6 @@ export default function RecipeDetailPage() {
     source_url: '',
   });
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const {
-    chatMessages,
-    setChatMessages,
-    pendingRecipe,
-    setPendingRecipe,
-    clearPendingRecipe,
-    clearChat,
-    chatInput,
-    setChatInput,
-    chatLoading,
-    setChatLoading,
-  } = useRecipeChat(recipeId);
   const [servingScale, setServingScale] = useState(1);
   const [scaleInput, setScaleInput] = useState('1');
   const [readjusting, setReadjusting] = useState(false);
@@ -148,6 +136,14 @@ export default function RecipeDetailPage() {
     fetchRecipe();
     fetchOrganization();
   }, [recipeId, isDemo, user]);
+
+  const fetchRecipeRef = useRef<() => Promise<void>>();
+
+  useEffect(() => {
+    const handler = () => fetchRecipeRef.current?.();
+    window.addEventListener('recipe-updated', handler);
+    return () => window.removeEventListener('recipe-updated', handler);
+  }, []);
 
   const fetchOrganization = async () => {
     if (!user || isDemo) return;
@@ -262,6 +258,7 @@ export default function RecipeDetailPage() {
       setLoading(false);
     }
   };
+  fetchRecipeRef.current = fetchRecipe;
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,45 +325,6 @@ export default function RecipeDetailPage() {
     return decodeHtmlEntities(parts.join(' ').trim());
   };
 
-  const handleChatSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || chatLoading || !recipe) return;
-
-    if (!requireAuth('use AI chat to customize recipes')) return;
-
-    const userMessage = chatInput.trim();
-    setChatInput('');
-    setChatMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
-    setChatLoading(true);
-    setPendingRecipe(null);
-
-    try {
-      const res = await authFetch(`/api/recipes/${recipeId}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          history: chatMessages,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to get response');
-
-      setChatMessages((prev) => [...prev, { role: 'assistant', content: data.message }]);
-      if (data.modifiedRecipe) {
-        setPendingRecipe(data.modifiedRecipe);
-      }
-    } catch (err: any) {
-      setChatMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: `Error: ${err.message || 'Something went wrong'}` },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
   const handleSkillLevelChange = async (newLevel: string) => {
     if (!recipe || readjusting) return;
     if (!requireAuth('adjust recipes for your skill level')) return;
@@ -402,38 +360,6 @@ export default function RecipeDetailPage() {
       setError(err.message || 'Failed to adjust recipe');
     } finally {
       setReadjusting(false);
-    }
-  };
-
-  const handleApplyChanges = async () => {
-    if (!pendingRecipe || !recipe) return;
-
-    setError('');
-    try {
-      const res = await authFetch(`/api/recipes/${recipeId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: pendingRecipe.name,
-          description: pendingRecipe.description,
-          ingredients: pendingRecipe.ingredients,
-          instructions: normalizeInstructions(pendingRecipe.instructions) || pendingRecipe.instructions,
-          prep_time: pendingRecipe.prep_time,
-          cook_time: pendingRecipe.cook_time,
-          servings: pendingRecipe.servings ?? recipe.servings ?? null,
-          source_url: recipe.source_url,
-          skill_level_adjusted: pendingRecipe.skill_level_adjusted ?? recipe.skill_level_adjusted ?? null,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to apply');
-      }
-      clearPendingRecipe();
-      await fetchRecipe();
-    } catch (err: any) {
-      setError(err.message || 'Failed to apply changes');
     }
   };
 
@@ -498,7 +424,7 @@ export default function RecipeDetailPage() {
         )}
 
         {!isEditing ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="max-w-3xl">
           <div className="bg-white rounded-lg border border-sage-200 p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
               <div className="min-w-0">
@@ -535,6 +461,17 @@ export default function RecipeDetailPage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setChatOpen(true)}
+                  className="hidden md:flex w-10 h-10 rounded-lg bg-terracotta-600 text-white hover:bg-terracotta-700 items-center justify-center shrink-0"
+                  aria-label="Talk with Cheffle"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={24} height={24} className="shrink-0" aria-hidden>
+                    <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="white" />
+                    <rect x="9" y="11" width="14" height="12" fill="white" />
+                  </svg>
+                </button>
                 <button onClick={handleStartCooking} className="btn-sage px-4 py-2 text-sm">
                   Start cooking
                 </button>
@@ -680,12 +617,7 @@ export default function RecipeDetailPage() {
 
             <div className="mb-6">
               <div className="flex flex-wrap items-center gap-3 mb-3">
-                <h2 className="text-lg font-medium text-sage-900">
-                  Ingredients
-                  {pendingRecipe && (
-                    <span className="ml-2 text-xs font-normal text-sage-500">(proposed changes)</span>
-                  )}
-                </h2>
+                <h2 className="text-lg font-medium text-sage-900">Ingredients</h2>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-sage-500">Scale:</span>
                   <input
@@ -704,72 +636,24 @@ export default function RecipeDetailPage() {
                   </span>
                 </div>
               </div>
-              {pendingRecipe ? (
-                <ul className="space-y-1.5">
-                  {getIngredientDiff(
-                    (recipe.ingredients || []).map((ing) =>
-                      scaleIngredient(
-                        typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing,
-                        servingScale
-                      )
-                    ),
-                    (pendingRecipe.ingredients || []).map((ing) => scaleIngredient(ing, servingScale))
-                  ).map((item, i) => (
-                    <li
-                      key={i}
-                      className={
-                        item.type === 'removed'
-                          ? 'text-red-600 line-through'
-                          : item.type === 'added'
-                          ? 'text-green-700 bg-green-50 py-0.5 px-1 rounded'
-                          : 'text-sage-700'
-                      }
-                    >
-                      {item.text}
+              <ul className="space-y-2">
+                {(recipe.ingredients || []).map((ing, i) => {
+                  const scaled = scaleIngredient(
+                    typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing,
+                    servingScale
+                  );
+                  return (
+                    <li key={i} className="text-sage-700">
+                      {formatIngredient(scaled)}
                     </li>
-                  ))}
-                </ul>
-              ) : (
-                <ul className="space-y-2">
-                  {(recipe.ingredients || []).map((ing, i) => {
-                    const scaled = scaleIngredient(
-                      typeof ing === 'string' ? { name: ing, quantity: '', unit: '' } : ing,
-                      servingScale
-                    );
-                    return (
-                      <li key={i} className="text-sage-700">
-                        {formatIngredient(scaled)}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                  );
+                })}
+              </ul>
             </div>
 
             <div>
-              <h2 className="text-lg font-medium text-sage-900 mb-3">
-                Instructions
-                {pendingRecipe && (
-                  <span className="ml-2 text-xs font-normal text-sage-500">(proposed changes)</span>
-                )}
-              </h2>
-              {pendingRecipe ? (
-                <div className="text-sage-700 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-                  {getTextDiff(recipe.instructions || '', pendingRecipe.instructions).map((part, i) =>
-                    part.added ? (
-                      <span key={i} className="bg-green-100 text-green-800">
-                        {part.value}
-                      </span>
-                    ) : part.removed ? (
-                      <span key={i} className="bg-red-100 text-red-700 line-through">
-                        {part.value}
-                      </span>
-                    ) : (
-                      <span key={i}>{part.value}</span>
-                    )
-                  )}
-                </div>
-              ) : instructionSteps.length > 0 ? (
+              <h2 className="text-lg font-medium text-sage-900 mb-3">Instructions</h2>
+              {instructionSteps.length > 0 ? (
                 <ol className="list-decimal list-inside space-y-3 text-sage-700">
                   {instructionSteps.map((step, i) => (
                     <li key={i} className="pl-2">
@@ -781,90 +665,6 @@ export default function RecipeDetailPage() {
                 <div className="whitespace-pre-wrap text-sage-700">{decodeHtmlEntities(recipe.instructions)}</div>
               )}
             </div>
-          </div>
-
-          {/* AI Chat - right column, sticky so it stays visible when scrolling */}
-          <div className="bg-white rounded-lg border border-sage-200 p-6 flex flex-col lg:h-[calc(100vh-8rem)] lg:sticky lg:top-4">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <h2 className="text-lg font-medium text-sage-900">Talk with Cheffle</h2>
-              {chatMessages.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearChat}
-                  disabled={chatLoading}
-                  className="text-sm text-sage-600 hover:text-sage-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  New chat
-                </button>
-              )}
-            </div>
-            <p className="text-sm text-sage-600 mb-4">
-              I&apos;m here to help! Ask me to tweak this recipe—add rice, make it vegetarian, double it, or anything else you have in mind.
-            </p>
-
-            <div className="space-y-3 mb-4 flex-1 min-h-0 overflow-y-auto">
-              {chatMessages.length === 0 && !chatLoading && (
-                <p className="text-sm text-sage-500 italic py-4">
-                  What would you like to change? Just ask!
-                </p>
-              )}
-              {chatMessages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`p-3 rounded-lg ${
-                    msg.role === 'user'
-                      ? 'bg-terracotta-50 text-sage-900 ml-4'
-                      : 'bg-sage-100 text-sage-800 mr-4'
-                  }`}
-                >
-                  <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
-                </div>
-              ))}
-              {chatLoading && (
-                <div className="p-3 rounded-lg bg-sage-100 text-sage-600 text-sm">
-                  <span className="animate-pulse">Cheffle is thinking...</span>
-                </div>
-              )}
-            </div>
-
-            {pendingRecipe && (
-              <div className="mb-4 p-4 bg-cream-100 border border-cream-300 rounded-lg shrink-0">
-                <p className="text-sm font-medium text-sage-800 mb-2">I&apos;ve got some changes for you!</p>
-                <p className="text-xs text-sage-600 mb-3">Take a look at the recipe on the left to see what I suggested.</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleApplyChanges}
-                    className="btn-primary px-4 py-2 text-sm"
-                  >
-                    Use these changes
-                  </button>
-                  <button
-                    onClick={clearPendingRecipe}
-                    className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 text-sm font-medium"
-                  >
-                    Start over
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleChatSubmit} className="flex gap-2 shrink-0">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="What would you like to change?"
-                className="flex-1 px-4 py-2 border border-sage-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-sage-900 placeholder:text-sage-400"
-                disabled={chatLoading}
-              />
-              <button
-                type="submit"
-                disabled={chatLoading || !chatInput.trim()}
-                className="btn-primary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Send
-              </button>
-            </form>
           </div>
         </div>
         ) : (
