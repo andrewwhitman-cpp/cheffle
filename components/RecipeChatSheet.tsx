@@ -209,20 +209,130 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4">
-          <p className="text-sm text-sage-600 mb-4">
-            I&apos;m here to help! Ask me to tweak this recipe—add rice, make it vegetarian, double it, or anything else.
-          </p>
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-4 relative">
+          {/* Voice indicator (only shown when active) */}
+          {isVoiceSupported && voiceEnabled && (
+            <div className="absolute bottom-[88px] left-0 right-0 flex justify-center pointer-events-none z-10 animate-in fade-in slide-in-from-bottom-2">
+              <div className="bg-sage-900/90 backdrop-blur-md text-white px-4 py-2.5 rounded-full shadow-lg flex items-center gap-3 border border-sage-700/50">
+                <div className="flex gap-1 items-center h-4">
+                  <span className="w-1 bg-terracotta-400 rounded-full h-2 animate-[bounce_1s_infinite]" />
+                  <span className="w-1 bg-terracotta-400 rounded-full h-4 animate-[bounce_1s_infinite_0.2s]" />
+                  <span className="w-1 bg-terracotta-400 rounded-full h-3 animate-[bounce_1s_infinite_0.4s]" />
+                </div>
+                <span className="text-xs font-medium tracking-wide">
+                  {isListening ? 'Listening...' : 'Say "Chef"...'}
+                </span>
+                <div className="w-px h-3 bg-sage-700 mx-1" />
+                <label className="flex items-center gap-1.5 text-[11px] font-medium text-sage-300 cursor-pointer pointer-events-auto hover:text-white transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={speakResponses}
+                    onChange={(e) => setSpeakResponses(e.target.checked)}
+                    className="rounded border-sage-600 bg-sage-800 text-terracotta-500 focus:ring-terracotta-500 focus:ring-offset-sage-900 w-3.5 h-3.5"
+                  />
+                  Speak
+                </label>
+              </div>
+            </div>
+          )}
 
-          {isVoiceSupported && (
-            <div className="mb-4 p-3 bg-sage-50 border border-sage-200 rounded-lg">
-              <div className="flex items-center gap-3">
+          <div className="space-y-4 mb-4 flex-1 min-h-0 overflow-y-auto px-1 py-2 scroll-smooth relative">
+            {chatMessages.length === 0 && !chatLoading && (
+              <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-in fade-in duration-700">
+                <div className="w-12 h-12 bg-sage-50 rounded-full flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={20} height={20} className="text-sage-400" aria-hidden>
+                    <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="currentColor" />
+                    <rect x="9" y="11" width="14" height="12" fill="currentColor" />
+                  </svg>
+                </div>
+                <p className="text-[15px] text-sage-600 font-light leading-relaxed">
+                  I&apos;m here to help! Ask me to tweak this recipe—add rice, make it vegetarian, double it, or anything else.
+                </p>
+              </div>
+            )}
+            
+            <div className="flex flex-col space-y-5 pb-4">
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+                    msg.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
+                >
+                  <div
+                    className={`max-w-[85%] ${
+                      msg.role === 'user'
+                        ? 'bg-sage-100 text-sage-900 rounded-2xl rounded-tr-sm px-5 py-3.5 shadow-sm'
+                        : 'text-sage-800 px-2 py-1'
+                    }`}
+                  >
+                    {msg.role === 'assistant' && (
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-5 h-5 rounded-full bg-terracotta-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={10} height={10} aria-hidden>
+                            <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="currentColor" />
+                            <rect x="9" y="11" width="14" height="12" fill="currentColor" />
+                          </svg>
+                        </div>
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-sage-500 font-sans">Cheffle</span>
+                      </div>
+                    )}
+                    <div className="text-[15px] leading-relaxed whitespace-pre-wrap font-light">{msg.content}</div>
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex w-full justify-start animate-in fade-in">
+                  <div className="max-w-[85%] px-2 py-1">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="w-5 h-5 rounded-full bg-terracotta-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={10} height={10} aria-hidden>
+                          <ellipse cx="16" cy="11" rx="9" ry="3.5" fill="currentColor" />
+                          <rect x="9" y="11" width="14" height="12" fill="currentColor" />
+                        </svg>
+                      </div>
+                      <span className="text-[11px] font-bold uppercase tracking-widest text-sage-500 font-sans">Cheffle</span>
+                    </div>
+                    <div className="flex gap-1 items-center h-6 pl-1">
+                      <span className="w-1.5 h-1.5 bg-sage-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-sage-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-sage-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {pendingRecipe && (
+            <div className="mb-4 p-5 bg-white border border-terracotta-200 shadow-[0_8px_30px_-6px_rgba(200,75,49,0.12)] rounded-2xl shrink-0 animate-in fade-in slide-in-from-top-4 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-terracotta-500" />
+              <p className="text-[11px] font-bold uppercase tracking-widest text-terracotta-600 font-sans mb-1 ml-1">Recipe Updated</p>
+              <p className="text-base font-serif text-sage-900 mb-4 ml-1">I&apos;ve prepared your new version.</p>
+              <div className="flex gap-3 ml-1">
+                <button onClick={handleApplyChanges} disabled={chatLoading} className="btn-primary px-5 py-2.5 text-sm shadow-sm flex-1">
+                  Apply changes
+                </button>
+                <button
+                  onClick={clearPendingRecipe}
+                  className="btn-ghost px-4 py-2.5 text-sm"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleChatSubmit} className="flex gap-2 shrink-0 pt-2 pb-2">
+            <div className="relative flex-1 flex items-center bg-sage-50/50 border border-sage-200/60 rounded-[2rem] focus-within:bg-white focus-within:border-terracotta-300 focus-within:ring-2 focus-within:ring-terracotta-500/20 transition-all shadow-sm pl-2 pr-1.5 py-1.5">
+              
+              {isVoiceSupported && (
                 <button
                   type="button"
                   onClick={() => setVoiceEnabled(!voiceEnabled)}
                   title={voiceEnabled ? 'Disable voice mode' : 'Enable voice mode'}
-                  className={`p-2 rounded-lg transition shrink-0 ${
-                    voiceEnabled ? 'bg-terracotta-100 text-terracotta-700' : 'bg-white border border-sage-200 text-sage-600 hover:bg-sage-100'
+                  className={`p-2 rounded-full transition-colors shrink-0 ${
+                    voiceEnabled ? 'text-terracotta-600 bg-terracotta-50' : 'text-sage-400 hover:text-sage-700 hover:bg-sage-100'
                   }`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -230,89 +340,28 @@ export default function RecipeChatSheet({ recipeId, onClose }: RecipeChatSheetPr
                     <path d="M4 10a8 8 0 0 0 16 0v2a8 8 0 0 1-16 0V10z" />
                   </svg>
                 </button>
-                {voiceEnabled ? (
-                  <>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-sage-700">
-                        {isListening
-                          ? 'Listening... Say "Chef" then your question.'
-                          : 'Say "Chef" then your question.'}
-                      </p>
-                    </div>
-                    <label className="flex items-center gap-1.5 text-xs text-sage-600 cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={speakResponses}
-                        onChange={(e) => setSpeakResponses(e.target.checked)}
-                        className="rounded border-sage-300"
-                      />
-                      Speak
-                    </label>
-                  </>
-                ) : (
-                  <p className="text-sm text-sage-600">Tap the mic to ask questions by voice</p>
-                )}
-              </div>
-            </div>
-          )}
+              )}
 
-          <div className="space-y-3 mb-4 flex-1 min-h-0 overflow-y-auto">
-            {chatMessages.length === 0 && !chatLoading && (
-              <p className="text-sm text-sage-500 italic py-4">What would you like to change? Just ask!</p>
-            )}
-            {chatMessages.map((msg, i) => (
-              <div
-                key={i}
-                className={`p-3 rounded-lg ${
-                  msg.role === 'user'
-                    ? 'bg-terracotta-50 text-sage-900 ml-4'
-                    : 'bg-sage-100 text-sage-800 mr-4'
-                }`}
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Message Cheffle..."
+                className="flex-1 min-w-0 px-3 py-2 bg-transparent focus:outline-none text-sage-900 placeholder:text-sage-400 text-[15px]"
+                disabled={chatLoading}
+              />
+              
+              <button
+                type="submit"
+                disabled={chatLoading || !chatInput.trim()}
+                className="w-9 h-9 rounded-full bg-terracotta-600 text-white flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-terracotta-700 transition-colors shadow-sm ml-1"
+                aria-label="Send message"
               >
-                <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
-              </div>
-            ))}
-            {chatLoading && (
-              <div className="p-3 rounded-lg bg-sage-100 text-sage-600 text-sm">
-                <span className="animate-pulse">Cheffle is thinking...</span>
-              </div>
-            )}
-          </div>
-
-          {pendingRecipe && (
-            <div className="mb-4 p-4 bg-cream-100 border border-cream-300 rounded-lg shrink-0">
-              <p className="text-sm font-medium text-sage-800 mb-2">I&apos;ve got some changes for you!</p>
-              <p className="text-xs text-sage-600 mb-3">Take a look at the recipe to see what I suggested.</p>
-              <div className="flex gap-2">
-                <button onClick={handleApplyChanges} disabled={chatLoading} className="btn-primary px-4 py-2 text-sm">
-                  Use these changes
-                </button>
-                <button
-                  onClick={clearPendingRecipe}
-                  className="px-4 py-2 border border-sage-300 text-sage-700 rounded-lg hover:bg-sage-50 text-sm font-medium"
-                >
-                  Start over
-                </button>
-              </div>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                  <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
+                </svg>
+              </button>
             </div>
-          )}
-
-          <form onSubmit={handleChatSubmit} className="flex gap-3 shrink-0 pt-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="What would you like to change?"
-              className="flex-1 min-w-0 px-5 py-3 border border-sage-200/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-sage-900 placeholder:text-sage-400 bg-sage-50/50 focus:bg-white transition-all shadow-sm"
-              disabled={chatLoading}
-            />
-            <button
-              type="submit"
-              disabled={chatLoading || !chatInput.trim()}
-              className="btn-primary px-6 py-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl shadow-sm"
-            >
-              Send
-            </button>
           </form>
         </div>
     </>

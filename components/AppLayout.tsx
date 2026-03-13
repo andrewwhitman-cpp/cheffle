@@ -116,8 +116,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <span className="text-xl font-serif font-semibold tracking-tight text-terracotta-600 truncate">Cheffle</span>
           </Link>
         </header>
-        <main className="flex-1 overflow-auto flex flex-col md:flex-row pb-24 md:pb-0">
-          <div className="flex-1 min-w-0 overflow-auto">
+        <main className="flex-1 flex flex-col md:flex-row pb-24 md:pb-0">
+          <div className="flex-1 min-w-0">
             {children}
           </div>
           {chatOpen && recipeId && (
