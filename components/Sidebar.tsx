@@ -8,6 +8,7 @@ import { authFetch } from '@/lib/auth-fetch';
 
 const MAIN_MENU = [
   { href: '/', label: 'Home', icon: 'home' },
+  { href: '/discover', label: 'Discover', icon: 'sparkles' },
   { href: '/recipes', label: 'Recipes', icon: 'book' },
 ];
 
@@ -20,6 +21,14 @@ function HomeIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
       <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
       <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
+    </svg>
+  );
+}
+
+function SparklesIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
+      <path fillRule="evenodd" d="M9 4.5a.75.75 0 01.721.544l.813 2.846a3.75 3.75 0 002.576 2.576l2.846.813a.75.75 0 010 1.442l-2.846.813a3.75 3.75 0 00-2.576 2.576l-.813 2.846a.75.75 0 01-1.442 0l-.813-2.846a3.75 3.75 0 00-2.576-2.576l-2.846-.813a.75.75 0 010-1.442l2.846-.813A3.75 3.75 0 007.466 7.89l.813-2.846A.75.75 0 019 4.5zM18 1.5a.75.75 0 01.728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 010 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 01-1.456 0l-.258-1.036a2.625 2.625 0 00-1.91-1.91l-1.036-.258a.75.75 0 010-1.456l1.036-.258a2.625 2.625 0 001.91-1.91l.258-1.036A.75.75 0 0118 1.5z" clipRule="evenodd" />
     </svg>
   );
 }
@@ -154,7 +163,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         <ul className="space-y-1 px-4">
           {MAIN_MENU.map((link) => {
             const active = isActive(link.href);
-            const Icon = link.icon === 'book' ? BookIcon : HomeIcon;
+            const Icon = link.icon === 'book' ? BookIcon : link.icon === 'sparkles' ? SparklesIcon : HomeIcon;
             return (
               <li key={link.href}>
                 <Link
